@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — AstroSeva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">← Back</a></h1>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2 style="margin-bottom: 20px;">Apply as Astrologer</h2>
+      
+      <form onsubmit="handleRegister(event)">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="regName" required>
+        </div>
+        
+        <div class="form-group">
+          <label>Profile Image URL</label>
+          <input type="url" id="regImage" placeholder="https://..." required>
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number (Username)</label>
+          <input type="tel" id="regPhone" required>
+        </div>
+
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPass" required>
+        </div>
+
+        <div class="form-group">
+          <label>Office Location</label>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="regLocation" placeholder="Address or coordinates" required>
+            <button type="button" class="btn btn-outline btn-sm" onclick="alert('Google Maps API requires a paid key. Please type your location manually.')">📍 Map</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Consultation Fee (₹)</label>
+          <input type="number" id="regFees" value="500" required>
+        </div>
+
+        <button type="submit" class="btn">Submit Application</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    function handleRegister(e) {
+      e.preventDefault();
+      const name = document.getElementById('regName').value;
+      const image = document.getElementById('regImage').value;
+      const phone = document.getElementById('regPhone').value;
+      const password = document.getElementById('regPass').value;
+      const location = document.getElementById('regLocation').value;
+      const fees = document.getElementById('regFees').value;
+
+      // Check if phone already exists
+      if (DB.getAstros().some(a => a.phone === phone)) {
+        alert('Phone number already registered.');
+        return;
+      }
+
+      DB.addAstro({ name, image, phone, password, location, fees });
+      alert('Application submitted! Admin has been notified. You will receive an SMS/WhatsApp with your login code once approved.');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>
