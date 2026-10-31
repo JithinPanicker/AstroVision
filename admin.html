@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard — AstroSeva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h1>Admin Panel</h1>
+    <button onclick="Utils.logout()" class="btn btn-outline btn-sm">Logout</button>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2 style="margin-bottom: 16px;">Pending Requests</h2>
+      <div id="pendingList"></div>
+      <p id="noPending" style="color: var(--text-light); display: none;">No pending requests.</p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    Utils.checkAuth('admin');
+
+    function renderPending() {
+      const list = document.getElementById('pendingList');
+      const empty = document.getElementById('noPending');
+      const astros = DB.getPendingAstros();
+
+      if (astros.length === 0) {
+        empty.style.display = 'block';
+        list.innerHTML = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      list.innerHTML = astros.map(a => `
+        <div style="border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 16px;">
+          <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 12px;">
+            <img src="${a.image}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+            <div>
+              <h3 style="font-size: 16px;">${a.name}</h3>
+              <p style="font-size: 13px; color: var(--text-light);">📞 ${a.phone}</p>
+              <p style="font-size: 13px; color: var(--text-light);">📍 ${a.location}</p>
+            </div>
+          </div>
+          <button onclick="approve('${a.id}')" class="btn btn-sm">Approve & Send Code</button>
+        </div>
+      `).join('');
+    }
+
+    function approve(id) {
+      const code = DB.approveAstro(id);
+      if (code) {
+        alert(`Astrologer approved! Login code: ${code}. Mock SMS/WhatsApp sent.`);
+        renderPending();
+      }
+    }
+
+    renderPending();
+  </script>
+</body>
+</html>
