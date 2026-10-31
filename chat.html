@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat — AstroSeva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">← Back</a></h1>
+    <h1 id="chatTitle" style="font-size: 16px;">Chat</h1>
+    <div style="width: 40px;"></div> <!-- Spacer -->
+  </header>
+
+  <main class="container">
+    <div class="chat-container">
+      <div class="chat-messages" id="messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()">Send</button>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const astroId = urlParams.get('astro');
+    
+    // Determine who is viewing
+    let customerName = urlParams.get('customer');
+    let isAstro = false;
+
+    if (!customerName) {
+      // If no customer param, check if an astrologer is logged in viewing their chat
+      const auth = JSON.parse(sessionStorage.getItem('astroseva_auth'));
+      if (auth && auth.role === 'astro' && auth.astroId === astroId) {
+        isAstro = true;
+        customerName = prompt("Enter customer name to view chat:");
+        if (!customerName) window.location.href = 'astro-dashboard.html';
+      } else {
+        // Customer viewing
+        customerName = sessionStorage.getItem('customerName');
+        if (!customerName) {
+          customerName = prompt("Enter your name to chat:");
+          if (customerName) sessionStorage.setItem('customerName', customerName);
+          else window.location.href = 'index.html';
+        }
+      }
+    }
+
+    const astro = DB.getAstroById(astroId);
+    document.getElementById('chatTitle').innerText = isAstro ? `Chat with ${customerName}` : `Chat with ${astro.name}`;
+
+    function renderMessages() {
+      const msgs = DB.getChats(astroId, customerName);
+      const container = document.getElementById('messages');
+      
+      container.innerHTML = msgs.map(m => `
+        <div class="message ${m.sender === 'astro' ? 'msg-astro' : 'msg-user'}">
+          ${m.text}
+        </div>
+      `).join('');
+      
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const sender = isAstro ? 'astro' : 'user';
+      DB.saveChat(astroId, customerName, { sender, text, time: Date.now() });
+      input.value = '';
+      renderMessages();
+    }
+
+    function handleEnter(e) {
+      if (e.key === 'Enter') sendMessage();
+    }
+
+    renderMessages();
+    // Poll for new messages every 2 seconds
+    setInterval(renderMessages, 2000);
+  </script>
+</body>
+</html>
