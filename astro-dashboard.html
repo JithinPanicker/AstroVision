@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — AstroSeva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h1>Astrologer Dashboard</h1>
+    <button onclick="Utils.logout()" class="btn btn-outline btn-sm">Logout</button>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>Settings & Fees</h2>
+      
+      <div class="fee-box">
+        <p>Your Consultation Fee: <strong id="dispFee">₹0</strong></p>
+        <p>App Tax (20%): <strong id="dispTax">₹0</strong></p>
+        <p style="margin-top: 8px; color: var(--primary); font-weight: bold; font-size: 18px;">
+          Your Earnings: <span id="dispEarnings">₹0</span>
+        </p>
+      </div>
+
+      <form onsubmit="updateSettings(event)">
+        <div class="form-group">
+          <label>Change Consultation Fee (₹)</label>
+          <input type="number" id="inputFee" required>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <div class="form-group" style="flex:1; margin-bottom:0;">
+            <label>Start Time</label>
+            <input type="time" id="inputStart" required>
+          </div>
+          <div class="form-group" style="flex:1; margin-bottom:0;">
+            <label>End Time</label>
+            <input type="time" id="inputEnd" required>
+          </div>
+        </div>
+        <button type="submit" class="btn">Save Changes</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Active Chats</h2>
+      <div id="chatList"></div>
+      <p id="noChats" style="color: var(--text-light); display: none;">No active chats yet.</p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    const auth = Utils.checkAuth('astro');
+    const astro = DB.getAstroById(auth.astroId);
+
+    function updateUI() {
+      document.getElementById('dispFee').innerText = `₹${astro.fees}`;
+      const tax = astro.fees * 0.20;
+      document.getElementById('dispTax').innerText = `₹${tax.toFixed(2)}`;
+      document.getElementById('dispEarnings').innerText = `₹${(astro.fees - tax).toFixed(2)}`;
+      
+      document.getElementById('inputFee').value = astro.fees;
+      document.getElementById('inputStart').value = astro.availability.start;
+      document.getElementById('inputEnd').value = astro.availability.end;
+    }
+
+    function updateSettings(e) {
+      e.preventDefault();
+      const fee = document.getElementById('inputFee').value;
+      const start = document.getElementById('inputStart').value;
+      const end = document.getElementById('inputEnd').value;
+
+      DB.updateAstroSettings(astro.id, fee, { start, end });
+      alert('Settings updated!');
+      
+      // Reload astro object
+      const updated = DB.getAstroById(astro.id);
+      Object.assign(astro, updated);
+      updateUI();
+    }
+
+    function loadChats() {
+      const chatsObj = JSON.parse(localStorage.getItem('astroseva_chats'));
+      const list = document.getElementById('chatList');
+      const empty = document.getElementById('noChats');
+      
+      const myChats = Object.keys(chatsObj || {}).filter(k => k.startsWith(astro.id));
+      
+      if (myChats.length === 0) {
+        empty.style.display = 'block';
+        list.innerHTML = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      list.innerHTML = myChats.map(k => {
+        const customerName = k.split('_')[1];
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border);">
+            <span style="font-weight: 600;">${customerName}</span>
+            <a href="chat.html?astro=${astro.id}&customer=${customerName}" class="btn btn-sm">Open Chat</a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    updateUI();
+    loadChats();
+    // Poll for new chats every 3 seconds
+    setInterval(loadChats, 3000);
+  </script>
+</body>
+</html>
