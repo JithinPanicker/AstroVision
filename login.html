@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — AstroSeva</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header class="header">
+    <h1><a href="index.html" style="color:inherit;text-decoration:none;">← Back</a></h1>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2 style="text-align: center; margin-bottom: 20px;">Sign In</h2>
+      
+      <div style="display:flex; margin-bottom: 20px; gap: 10px;">
+        <button id="tabAdmin" class="btn btn-outline" onclick="switchTab('admin')">Admin</button>
+        <button id="tabAstro" class="btn" onclick="switchTab('astro')">Astrologer</button>
+      </div>
+
+      <!-- Admin Login -->
+      <form id="adminForm" style="display: none;" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="adminUser" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="adminPass" required>
+        </div>
+        <button type="submit" class="btn">Login as Admin</button>
+      </form>
+
+      <!-- Astrologer Login -->
+      <form id="astroForm" onsubmit="handleAstroLogin(event)">
+        <div class="form-group">
+          <label>Username (Phone Number)</label>
+          <input type="text" id="astroUser" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="astroPass" required>
+        </div>
+        <div class="form-group">
+          <label>Login Code (Sent via SMS/WhatsApp)</label>
+          <input type="text" id="astroCode" placeholder="6-digit code" required>
+        </div>
+        <button type="submit" class="btn">Login as Astrologer</button>
+      </form>
+      
+      <p style="text-align: center; margin-top: 16px; font-size: 14px;">
+        Not registered? <a href="register.html">Apply here</a>
+      </p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+  <script>
+    function switchTab(role) {
+      document.getElementById('tabAdmin').className = role === 'admin' ? 'btn' : 'btn btn-outline';
+      document.getElementById('tabAstro').className = role === 'astro' ? 'btn' : 'btn btn-outline';
+      document.getElementById('adminForm').style.display = role === 'admin' ? 'block' : 'none';
+      document.getElementById('astroForm').style.display = role === 'astro' ? 'block' : 'none';
+    }
+
+    function handleAdminLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('adminUser').value;
+      const pass = document.getElementById('adminPass').value;
+
+      if (user === 'admin' && pass === 'admin') {
+        sessionStorage.setItem('astroseva_auth', JSON.stringify({ role: 'admin' }));
+        window.location.href = 'admin.html';
+      } else {
+        alert('Invalid admin credentials. Use admin/admin.');
+      }
+    }
+
+    function handleAstroLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('astroUser').value;
+      const pass = document.getElementById('astroPass').value;
+      const code = document.getElementById('astroCode').value;
+
+      const astros = DB.getAstros();
+      const astro = astros.find(a => a.phone === user && a.password === pass);
+
+      if (!astro) {
+        alert('Invalid username or password.');
+        return;
+      }
+      if (astro.status !== 'approved') {
+        alert('Your account is pending approval by Admin.');
+        return;
+      }
+      if (astro.loginCode !== code) {
+        alert('Invalid login code. Check your SMS/WhatsApp.');
+        return;
+      }
+
+      sessionStorage.setItem('astroseva_auth', JSON.stringify({ role: 'astro', astroId: astro.id }));
+      window.location.href = 'astro-dashboard.html';
+    }
+  </script>
+</body>
+</html>
