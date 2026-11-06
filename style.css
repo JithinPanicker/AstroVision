@@ -1,117 +1,233 @@
 /* =====================================================
-   AstroSeva — Light Theme Stylesheet
+   AstroSeva — BookMyShow Inspired Stylesheet
    ===================================================== */
 
 :root {
-  --bg: #e6f4f1; /* Matches your image background */
-  --surface: #ffffff;
-  --primary: #2a9d8f; /* Teal button color from image */
-  --primary-hover: #21867a;
-  --text: #264653;
-  --text-light: #6c757d;
-  --border: #d1e7e4;
-  --danger: #e76f51;
-  --gold: #f4a261;
-  --radius: 12px;
-  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --bg: #ffffff;
+  --text-main: #333333;
+  --text-muted: #666666;
+  --text-light: #888888;
+  --accent: #DC3558;
+  --accent-hover: #c62d4d;
+  --border: #e5e5e5;
+  --surface: #f8f8f8;
+  --font: 'Roboto', sans-serif;
+  --radius: 8px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: var(--font);
   background-color: var(--bg);
-  color: var(--text);
-  line-height: 1.5;
-  padding-bottom: 80px; /* space for bottom nav */
+  color: var(--text-main);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Typography */
-h1, h2, h3, h4 { font-weight: 700; color: var(--text); }
-a { color: var(--primary); text-decoration: none; }
+a { text-decoration: none; color: inherit; }
+button { cursor: pointer; font-family: inherit; border: none; background: none; }
+ul { list-style: none; }
 
-/* Layout */
-.container { max-width: 600px; margin: 0 auto; padding: 16px; }
-.card {
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: var(--shadow);
-  margin-bottom: 16px;
+/* --- Layout --- */
+.container { max-width: 1240px; margin: 0 auto; padding: 0 20px; }
+
+/* --- Top Navigation --- */
+.top-nav {
+  background: white;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-container {
+  max-width: 1240px; margin: 0 auto; padding: 0 20px;
+  height: 64px; display: flex; justify-content: space-between; align-items: center;
+}
+.nav-left { display: flex; align-items: center; gap: 24px; }
+.brand-logo svg { height: 28px; display: block; }
+
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border-radius: 4px; padding: 8px 12px;
+  width: 400px; border: 1px solid transparent; transition: border-color 0.2s;
+}
+.search-bar:focus-within { border-color: var(--border); background: white; }
+.search-bar input { border: none; background: transparent; width: 100%; outline: none; font-size: 14px; }
+.search-bar input::placeholder { color: var(--text-light); }
+
+.nav-right { display: flex; align-items: center; gap: 16px; }
+.nav-link { font-size: 14px; color: var(--text-muted); }
+.nav-link:hover { color: var(--text-main); }
+.btn-signin {
+  background: var(--accent); color: white; padding: 6px 16px; border-radius: 4px;
+  font-size: 14px; font-weight: 500; transition: background 0.2s;
+}
+.btn-signin:hover { background: var(--accent-hover); }
+.mobile-only { display: none; }
+
+/* --- Secondary Navigation --- */
+.sub-nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.sub-nav .nav-container {
+  height: 40px; display: flex; justify-content: space-between;
+}
+.sub-link {
+  font-size: 13px; color: var(--text-muted); padding: 0 12px;
+  height: 100%; display: flex; align-items: center; transition: color 0.2s;
+}
+.sub-link:hover, .sub-link.active { color: var(--accent); font-weight: 500; }
+.sub-right { display: flex; }
+
+/* --- Hero Carousel --- */
+.hero-carousel {
+  width: 100%; height: 250px; overflow: hidden; margin-bottom: 24px;
+}
+.hero-track { display: flex; height: 100%; }
+.hero-slide {
+  min-width: 100%; height: 100%; display: flex; align-items: center; padding: 0 10%;
+}
+.slide-content h1 { font-size: 32px; color: #222; margin-bottom: 8px; }
+.slide-content p { font-size: 16px; color: #444; margin-bottom: 16px; }
+.btn-primary {
+  background: var(--accent); color: white; padding: 10px 24px;
+  border-radius: 4px; font-weight: 500; font-size: 15px;
 }
 
-/* Header */
-.header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 16px; background: var(--surface); box-shadow: var(--shadow);
-  position: sticky; top: 0; z-index: 10; margin-bottom: 16px;
+/* --- Filters --- */
+.filter-section { margin-bottom: 32px; }
+.filter-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+  overflow-x: auto; padding-bottom: 4px;
 }
-.header h1 { font-size: 20px; color: var(--primary); }
-
-/* Forms & Inputs */
-.form-group { margin-bottom: 16px; }
-.form-group label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--text-light); }
-.form-group input, .form-group textarea, .form-group select {
-  width: 100%; padding: 12px; border: 1px solid var(--border);
-  border-radius: 8px; font-family: inherit; font-size: 15px; outline: none;
-  transition: border-color 0.2s;
+.filter-label { font-size: 14px; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+.chip {
+  padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border);
+  background: white; color: var(--text-main); font-size: 13px; white-space: nowrap;
+  transition: all 0.2s;
 }
-.form-group input:focus, .form-group textarea:focus { border-color: var(--primary); }
-
-/* Buttons */
-.btn {
-  display: inline-block; width: 100%; padding: 14px; border: none;
-  border-radius: 8px; background: var(--primary); color: white;
-  font-size: 16px; font-weight: 600; text-align: center; cursor: pointer;
-  transition: background 0.2s;
+.chip.active {
+  background: var(--accent); color: white; border-color: var(--accent);
 }
-.btn:hover { background: var(--primary-hover); }
-.btn-outline { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
-.btn-danger { background: var(--danger); }
-.btn-sm { padding: 8px 16px; font-size: 14px; width: auto; }
 
-/* Astrologer Cards */
-.astro-card { display: flex; gap: 16px; align-items: flex-start; }
-.astro-avatar {
-  width: 60px; height: 60px; border-radius: 50%; object-fit: cover;
-  background: var(--bg); border: 2px solid var(--primary);
+/* --- Astrologer Grid --- */
+.section-header {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 16px; border-bottom: 2px solid var(--accent); padding-bottom: 8px;
 }
-.astro-info h3 { font-size: 18px; margin-bottom: 4px; }
-.astro-info p { font-size: 13px; color: var(--text-light); }
-.astro-meta { display: flex; gap: 12px; margin-top: 8px; font-size: 13px; color: var(--primary); font-weight: 600; }
-.astro-actions { display: flex; gap: 8px; margin-top: 12px; }
+.section-header h2 { font-size: 20px; font-weight: 500; color: var(--text-main); }
+.results-count { font-size: 13px; color: var(--text-muted); }
 
-/* Badges */
-.badge {
-  display: inline-block; padding: 4px 8px; border-radius: 4px;
-  font-size: 12px; font-weight: 700; background: var(--bg); color: var(--primary);
+.astro-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px 24px;
 }
-.badge-pending { background: #fff3cd; color: #856404; }
-.badge-approved { background: #d4edda; color: #155724; }
 
-/* Chat Box */
-.chat-container {
-  display: flex; flex-direction: column; height: calc(100vh - 140px);
-  background: var(--surface); border-radius: var(--radius); overflow: hidden;
-  box-shadow: var(--shadow);
+.astro-card {
+  cursor: pointer;
+  transition: transform 0.2s;
 }
-.chat-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: 600; }
-.chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-.message { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
-.msg-astro { align-self: flex-start; background: var(--bg); color: var(--text); border-bottom-left-radius: 2px; }
-.msg-user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
-.chat-input-area { display: flex; padding: 12px; border-top: 1px solid var(--border); gap: 8px; }
-.chat-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border); border-radius: 20px; outline: none; }
-.chat-input-area button { padding: 10px 20px; border-radius: 20px; border: none; background: var(--primary); color: white; font-weight: bold; cursor: pointer; }
+.astro-card:hover { transform: translateY(-4px); }
 
-/* Dashboard Specifics */
-.fee-box { background: var(--bg); padding: 16px; border-radius: 8px; margin-bottom: 16px; }
-.fee-box p { font-size: 14px; margin-bottom: 4px; }
-.fee-box h3 { color: var(--primary); }
+.card-image-wrap {
+  position: relative; border-radius: var(--radius); overflow: hidden;
+  aspect-ratio: 2 / 3; background: var(--surface); margin-bottom: 8px;
+}
+.card-image-wrap img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.online-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: #4caf50; color: white; font-size: 10px; font-weight: bold;
+  padding: 2px 6px; border-radius: 4px;
+}
+.rating-badge {
+  position: absolute; bottom: 8px; left: 8px;
+  background: rgba(0,0,0,0.7); color: white; font-size: 12px;
+  padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; gap: 4px;
+}
 
-/* PWA Install Prompt */
-#installPrompt {
-  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-  background: var(--text); color: white; padding: 12px 20px; border-radius: 30px;
-  display: none; z-index: 100; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+.card-details h3 {
+  font-size: 16px; font-weight: 500; color: var(--text-main);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-details .skills {
+  font-size: 13px; color: var(--text-muted); margin: 4px 0 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-details .lang {
+  font-size: 12px; color: var(--text-light);
+}
+
+.card-actions {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.btn-chat {
+  flex: 1; background: var(--accent); color: white;
+  padding: 8px 0; border-radius: 4px; font-size: 13px; font-weight: 500;
+}
+.btn-call {
+  flex: 1; background: transparent; border: 1px solid var(--accent);
+  color: var(--accent); padding: 8px 0; border-radius: 4px; font-size: 13px; font-weight: 500;
+}
+.btn-chat:hover { background: var(--accent-hover); }
+.btn-call:hover { background: #fff0f3; }
+
+/* --- Empty State --- */
+.empty-state { text-align: center; padding: 60px 0; color: var(--text-muted); }
+.empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-main); }
+
+/* --- Footer --- */
+.site-footer {
+  background: #f1f1f1; margin-top: 60px; padding: 40px 0 20px;
+  border-top: 1px solid var(--border);
+}
+.footer-links {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  margin-bottom: 40px;
+}
+.footer-links h4 { font-size: 14px; color: var(--text-main); margin-bottom: 12px; text-transform: uppercase; }
+.footer-links a {
+  display: block; font-size: 12px; color: var(--text-muted); margin-bottom: 8px;
+}
+.footer-links a:hover { color: var(--accent); }
+.footer-bottom {
+  border-top: 1px solid var(--border); padding-top: 20px;
+  text-align: center; color: var(--text-light); font-size: 12px;
+}
+.social-icons {
+  display: flex; justify-content: center; gap: 16px; margin-bottom: 16px;
+}
+.social-icons a {
+  width: 32px; height: 32px; border-radius: 50%; background: #ccc;
+  color: white; display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 11px;
+}
+.social-icons a:hover { background: var(--text-main); }
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .astro-grid { grid-template-columns: repeat(3, 1fr); }
+  .search-bar { width: 300px; }
+}
+
+@media (max-width: 768px) {
+  .astro-grid { grid-template-columns: repeat(2, 1fr); gap: 20px 16px; }
+  .search-bar { display: none; } /* Hide search on mobile for simplicity, usually toggled */
+  .mobile-only { display: block; }
+  .nav-left { gap: 12px; }
+  .sub-nav .nav-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sub-link { padding: 0 10px; font-size: 12px; }
+  .hero-carousel { height: 180px; }
+  .slide-content h1 { font-size: 22px; }
+  .slide-content p { font-size: 14px; }
+  .footer-links { grid-template-columns: 1fr; gap: 20px; }
+}
+
+@media (max-width: 480px) {
+  .astro-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
+  .card-details h3 { font-size: 14px; }
+  .card-details .skills { font-size: 12px; }
+  .btn-chat, .btn-call { padding: 6px 0; font-size: 12px; }
 }
