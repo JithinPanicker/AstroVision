@@ -2,159 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ffffff">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AstroSeva - Book Astrologers Online</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-  <!-- ================= TOP NAVIGATION ================= -->
   <header class="top-nav">
     <div class="nav-container">
-      <div class="nav-left">
-        <!-- Hamburger (Mobile) -->
-        <button class="icon-btn mobile-only">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-        </button>
-        
-        <!-- Logo -->
-        <a href="#" class="brand-logo">
-          <svg width="130" height="30" viewBox="0 0 200 40" fill="none">
-            <text x="0" y="30" font-family="Roboto" font-weight="700" font-size="28" fill="#DC3558">AstroSeva</text>
-          </svg>
-        </a>
-
-        <!-- Search Bar -->
-        <div class="search-bar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-          <input type="text" id="searchInput" placeholder="Search for Astrologers, Skills, Languages...">
-        </div>
+      <a href="index.html" class="brand-logo">AstroSeva</a>
+      <div class="nav-links">
+        <a href="index.html">Consultations</a>
+        <a href="register.html">Become an Astrologer</a>
+        <a href="login.html">Login</a>
       </div>
-
-      <div class="nav-right">
-        <a href="#" class="nav-link">Kochi</a>
-        <button class="btn-signin">Sign in</button>
-      </div>
+      <a href="login.html" class="btn-primary">Sign In</a>
     </div>
   </header>
 
-  <!-- ================= SECONDARY NAVIGATION ================= -->
-  <div class="sub-nav">
-    <div class="nav-container">
-      <a href="#" class="sub-link active">Consultations</a>
-      <a href="#" class="sub-link">Chat</a>
-      <a href="#" class="sub-link">Call</a>
-      <a href="#" class="sub-link">Horoscope</a>
-      <a href="#" class="sub-link">Free Kundli</a>
-      <a href="#" class="sub-link">Calculators</a>
-      <div class="sub-right">
-        <a href="#" class="sub-link">List Your Profile</a>
-        <a href="#" class="sub-link">Offers</a>
-      </div>
+  <main class="container" style="padding-top: 40px;">
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:2px solid #DC3558; padding-bottom:10px; margin-bottom:20px;">
+      <h1 style="font-size:24px;">Astrologers in Kochi</h1>
     </div>
-  </div>
-
-  <main>
-    <!-- ================= HERO CAROUSEL ================= -->
-    <section class="hero-carousel">
-      <div class="hero-track">
-        <div class="hero-slide" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);">
-          <div class="slide-content">
-            <h1>First Chat is Free!</h1>
-            <p>Connect with India's top astrologers instantly.</p>
-            <button class="btn-primary">Start Now</button>
-          </div>
-        </div>
-        <div class="hero-slide" style="background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);">
-          <div class="slide-content">
-            <h1>Get Your Kundli Read</h1>
-            <p>Detailed analysis by verified experts.</p>
-            <button class="btn-primary">Book Session</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= FILTERS ================= -->
-    <section class="filter-section container">
-      <div class="filter-row">
-        <span class="filter-label">Skills:</span>
-        <button class="chip active" data-filter="all">All</button>
-        <button class="chip" data-filter="vedic">Vedic</button>
-        <button class="chip" data-filter="tarot">Tarot</button>
-        <button class="chip" data-filter="numerology">Numerology</button>
-        <button class="chip" data-filter="vastu">Vastu</button>
-      </div>
-      <div class="filter-row">
-        <span class="filter-label">Language:</span>
-        <button class="chip active" data-filter="all">All</button>
-        <button class="chip" data-filter="hindi">Hindi</button>
-        <button class="chip" data-filter="english">English</button>
-        <button class="chip" data-filter="tamil">Tamil</button>
-      </div>
-    </section>
-
-    <!-- ================= ASTROLOGER GRID ================= -->
-    <section class="listings container">
-      <div class="section-header">
-        <h2>Astrologers near you</h2>
-        <div class="results-count" id="resultsCount"></div>
-      </div>
-      
-      <div class="astro-grid" id="astroGrid">
-        <!-- Dynamically populated via app.js -->
-      </div>
-      
-      <div id="emptyState" class="empty-state" style="display: none;">
-        <h3>No astrologers found</h3>
-        <p>Try changing your filters or search term.</p>
-      </div>
-    </section>
+    
+    <div class="astro-grid" id="astroGrid"></div>
   </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-links">
-        <div>
-          <h4>Help</h4>
-          <a href="#">About Us</a>
-          <a href="#">Contact Us</a>
-          <a href="#">FAQs</a>
-          <a href="#">Terms and Conditions</a>
-          <a href="#">Privacy Policy</a>
-        </div>
-        <div>
-          <h4>AstroSeva Exclusives</h4>
-          <a href="#">Gift Cards</a>
-          <a href="#">Offers</a>
-          <a href="#">Stream</a>
-          <a href="#">Trailers</a>
-        </div>
-        <div>
-          <h4>Astrologers By Language</h4>
-          <a href="#">Hindi Astrologers</a>
-          <a href="#">English Astrologers</a>
-          <a href="#">Tamil Astrologers</a>
-          <a href="#">Telugu Astrologers</a>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <div class="social-icons">
-          <a href="#">FB</a>
-          <a href="#">X</a>
-          <a href="#">IG</a>
-          <a href="#">YT</a>
-        </div>
-        <p>Copyright 2026 © AstroSeva Entertainment Pvt. Ltd. All Rights Reserved.</p>
-      </div>
-    </div>
-  </footer>
 
   <script src="app.js"></script>
 </body>
