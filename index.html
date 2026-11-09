@@ -4,29 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#4338ca" />
-  <meta name="description" content="BookMyAstrologer — consult verified astrologers, book slots, manage bookings." />
   <title>BookMyAstrologer</title>
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="./icon.svg" />
   <link rel="stylesheet" href="./style.css" />
 </head>
-<body>
+<body data-app="user">
   <header class="topbar">
     <button class="icon-btn" id="backBtn" style="visibility:hidden" aria-label="Back">←</button>
     <div class="brand">
       <span class="brand-mark">✨</span>
       <span class="brand-name">BookMyAstrologer</span>
     </div>
-    <button class="icon-btn" id="roleBtn" style="visibility:hidden" aria-label="Switch role">⟳</button>
+    <button class="icon-btn" id="homeBtn" style="visibility:hidden" aria-label="Home">⌂</button>
   </header>
-
-  <main id="view" class="view" aria-live="polite"></main>
-
+  <main id="view" class="view"></main>
   <nav id="bottomNav" class="bottom-nav" hidden></nav>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
+  <div id="modalRoot"></div>
   <script src="./app.js"></script>
 </body>
 </html>
