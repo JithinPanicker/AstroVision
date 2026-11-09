@@ -1,17 +1,21 @@
 {
-  "name": "AstroSeva - Book Astrologers",
-  "short_name": "AstroSeva",
-  "description": "Book verified astrologers for kundli, tarot, and more.",
-  "start_url": "./index.html",
+  "name": "BookMyAstrologer",
+  "short_name": "BookMyAstro",
+  "description": "Consult verified astrologers, book slots, and manage appointments.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#DC3558",
+  "orientation": "portrait",
+  "background_color": "#f8f7fc",
+  "theme_color": "#4338ca",
+  "lang": "en-IN",
+  "categories": ["lifestyle", "productivity"],
   "icons": [
-    {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='36' fill='%23DC3558'/%3E%3Ccircle cx='96' cy='96' r='58' fill='none' stroke='%23ffffff' stroke-width='7'/%3E%3Ccircle cx='96' cy='96' r='20' fill='%23ffffff'/%3E%3C/svg%3E",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    }
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Find astrologers", "url": "./#/user/home" },
+    { "name": "My bookings",      "url": "./#/user/bookings" }
   ]
 }
