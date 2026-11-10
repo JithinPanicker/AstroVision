@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#1e1b4b" />
-  <title>BMA Admin Console</title>
+  <title>BookMyAstrologer · Admin</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="./style.css" />
 </head>
@@ -15,11 +15,11 @@
       <span class="brand-mark">🛡️</span>
       <span class="brand-name">BMA Admin</span>
     </div>
-    <a class="icon-btn" href="./index.html" aria-label="Exit to user app" title="Exit">⎋</a>
+    <a class="icon-btn" href="./index.html" aria-label="Exit to user app" title="Exit to user app">⎋</a>
   </header>
   <main id="view" class="view view--wide"></main>
   <nav id="bottomNav" class="bottom-nav bottom-nav--wide"></nav>
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <div id="modalRoot"></div>
   <script src="./app.js"></script>
 </body>
