@@ -1,5 +1,5 @@
 /* ================================================================
-   BookMyAstrologer — App (Day 4)
+   BookMyAstrologer — App (Day 5)
    Three apps in one codebase: User · Astrologer · Admin
    ================================================================ */
 
@@ -8,9 +8,9 @@ const APP = document.body.dataset.app || 'user';
 const CONFIG = {
   appName: 'BookMyAstrologer',
   currency: '₹',
-  storageKey: 'bma_db_v4',
-  version: 'day4',
-  buildLabel: 'v4 · Day 4',
+  storageKey: 'bma_db_v5',
+  version: 'day5',
+  buildLabel: 'v5 · Day 5',
 };
 const CURRENT = {
   userId: 'u1',
@@ -27,16 +27,19 @@ const AUDIT_META = {
   create_slot:        { icon: '➕', cls: 'success', label: 'Created slot' },
   update_slot:        { icon: '✏️', cls: 'info',    label: 'Updated slot' },
   delete_slot:        { icon: '🗑️', cls: 'danger',  label: 'Deleted slot' },
+  /* Day 5 */
+  confirm_booking:    { icon: '✓', cls: 'success', label: 'Accepted booking' },
+  decline_booking:    { icon: '✕', cls: 'danger',  label: 'Declined booking' },
+  complete_booking:   { icon: '✅', cls: 'success', label: 'Completed session' },
 };
 
 const state = {
-  // admin
   adminAstroTab: 'pending',
   adminUserFilter: 'all',
   adminUserQuery: '',
   adminBookingFilter: 'all',
   adminBookingQuery: '',
-  // user browse
+  astroBookingTab: 'requests',
   userQuery: '',
   userSpecialty: 'all',
   userPriceBand: 'all',
@@ -67,6 +70,11 @@ const U = {
   },
   todayIso: () => {
     const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  },
+  addDaysIso: (iso, n) => {
+    const d = new Date(iso + 'T00:00:00');
+    d.setDate(d.getDate() + n);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   },
   nowIso: () => new Date().toISOString(),
@@ -117,44 +125,26 @@ const Store = {
 
   updateAstro(id, patch) {
     const a = this.load().astrologers.find(x => x.id === id);
-    if (!a) return null;
-    Object.assign(a, patch);
-    this.save();
-    return a;
+    if (!a) return null; Object.assign(a, patch); this.save(); return a;
   },
   updateUser(id, patch) {
     const u = this.load().users.find(x => x.id === id);
-    if (!u) return null;
-    Object.assign(u, patch);
-    this.save();
-    return u;
+    if (!u) return null; Object.assign(u, patch); this.save(); return u;
   },
   updateBooking(id, patch) {
     const b = this.load().bookings.find(x => x.id === id);
-    if (!b) return null;
-    Object.assign(b, patch);
-    this.save();
-    return b;
+    if (!b) return null; Object.assign(b, patch); this.save(); return b;
   },
-  addSlot(slot) {
-    this.load().slots.push(slot);
-    this.save();
-    return slot;
-  },
+  addSlot(slot) { this.load().slots.push(slot); this.save(); return slot; },
   updateSlot(id, patch) {
     const s = this.load().slots.find(x => x.id === id);
-    if (!s) return null;
-    Object.assign(s, patch);
-    this.save();
-    return s;
+    if (!s) return null; Object.assign(s, patch); this.save(); return s;
   },
   removeSlot(id) {
     const arr = this.load().slots;
     const i = arr.findIndex(s => s.id === id);
     if (i < 0) return false;
-    arr.splice(i, 1);
-    this.save();
-    return true;
+    arr.splice(i, 1); this.save(); return true;
   },
   log(actorRole, actorName, action, targetType, targetId, meta) {
     this.load().audit.push({
@@ -169,10 +159,7 @@ const Store = {
   _seed() {
     const day = (offset) => {
       const d = new Date(); d.setDate(d.getDate() + offset);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${y}-${m}-${dd}`;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     };
     const now = U.nowIso();
     const daysAgo = (n) => new Date(Date.now() - n * 86400000).toISOString();
@@ -212,25 +199,38 @@ const Store = {
       { id:'s1', astrologerId:'a1', date: day(0), time:'10:00', duration:30, price:500 },
       { id:'s2', astrologerId:'a1', date: day(0), time:'15:00', duration:30, price:500 },
       { id:'s3', astrologerId:'a1', date: day(1), time:'11:00', duration:30, price:500 },
+      { id:'s4', astrologerId:'a1', date: day(2), time:'17:00', duration:30, price:500 },
       { id:'s6', astrologerId:'a2', date: day(0), time:'12:00', duration:45, price:750 },
       { id:'s7', astrologerId:'a2', date: day(1), time:'14:00', duration:45, price:750 },
       { id:'s8', astrologerId:'a5', date: day(0), time:'16:00', duration:60, price:1200 },
     ];
 
     const bookings = [
+      /* confirmed, today, online-paid (Aarav → Rajesh) */
       { id:'b1', userId:'u1', astrologerId:'a1', slotId:'s1', date: day(0), time:'10:00',
         amount:500, status:'confirmed', paymentMode:'online', paymentStatus:'paid',
-        paymentRef:'pay_RZP_A1B2C3', createdAt: daysAgo(2), paidAt: daysAgo(2) },
+        paymentRef:'pay_RZP_A1B2C3', createdAt: daysAgo(2), paidAt: daysAgo(2), confirmedAt: daysAgo(2) },
+      /* pending, tomorrow, offline-unpaid (Aarav → Meera) */
       { id:'b2', userId:'u1', astrologerId:'a2', slotId:'s7', date: day(1), time:'14:00',
         amount:750, status:'pending', paymentMode:'offline', paymentStatus:'unpaid',
         paymentRef:null, createdAt: now },
+      /* completed, past, cash-paid (Priya → Rajesh) */
       { id:'b3', userId:'u2', astrologerId:'a1', slotId:'s0-old', date: day(-3), time:'11:00',
         amount:500, status:'completed', paymentMode:'offline', paymentStatus:'paid',
-        paymentRef:'CASH-session-42', createdAt: daysAgo(4), paidAt: daysAgo(3) },
+        paymentRef:'CASH-session-42', createdAt: daysAgo(4), paidAt: daysAgo(3), completedAt: daysAgo(3) },
+      /* cancelled+refunded (Vikram → Meera) */
       { id:'b4', userId:'u3', astrologerId:'a2', slotId:'s6', date: day(-1), time:'12:00',
         amount:750, status:'cancelled', paymentMode:'online', paymentStatus:'refunded',
         paymentRef:'pay_RZP_D4E5F6', refundAmount:750, refundReason:'Astrologer unavailable',
         createdAt: daysAgo(5), paidAt: daysAgo(5), refundedAt: daysAgo(4), cancelledAt: daysAgo(4) },
+      /* NEW — pending, tomorrow, online-paid (Vikram → Rajesh) — for testing accept/decline */
+      { id:'b5', userId:'u3', astrologerId:'a1', slotId:'s3', date: day(1), time:'11:00',
+        amount:500, status:'pending', paymentMode:'online', paymentStatus:'paid',
+        paymentRef:'pay_RZP_X9Y8Z7', createdAt: now, paidAt: now },
+      /* NEW — confirmed, tomorrow, offline-unpaid (Priya → Meera) */
+      { id:'b6', userId:'u2', astrologerId:'a2', slotId:'s7', date: day(1), time:'14:00',
+        amount:750, status:'confirmed', paymentMode:'offline', paymentStatus:'unpaid',
+        paymentRef:null, createdAt: daysAgo(1), confirmedAt: daysAgo(1) },
     ];
 
     const users = [
@@ -340,18 +340,14 @@ const Actions = {
     if (U.isPastDate(date)) return { error: 'Cannot create a slot in the past' };
     const dup = Store.listSlots(astroId).find(s => s.date === date && s.time === time);
     if (dup) return { error: 'A slot already exists at that date & time' };
-
     const slot = {
-      id: U.uid('slot'),
-      astrologerId: astroId,
-      date, time,
-      duration: Number(duration) || 30,
+      id: U.uid('slot'), astrologerId: astroId,
+      date, time, duration: Number(duration) || 30,
       price: Number(price) || a.fee,
       createdAt: U.nowIso(),
     };
     Store.addSlot(slot);
-    Store.log('astro', a.name, 'create_slot', 'slot', slot.id,
-      { name: a.name, date, time });
+    Store.log('astro', a.name, 'create_slot', 'slot', slot.id, { name: a.name, date, time });
     return { ok: true, message: 'Slot created', slot };
   },
   updateSlot(slotId, patch) {
@@ -381,6 +377,74 @@ const Actions = {
       { date: s.date, time: s.time });
     return { ok: true, message: 'Slot deleted' };
   },
+
+  /* ── Day 5: Booking lifecycle (astrologer side) ── */
+  acceptBooking(id) {
+    const b = Store.getBooking(id);
+    if (!b) return { error: 'Booking not found' };
+    if (b.status !== 'pending') return { error: 'Only pending bookings can be accepted' };
+    const astro = Store.getAstro(b.astrologerId);
+    if (!astro) return { error: 'Astrologer not found' };
+    Store.updateBooking(id, { status: 'confirmed', confirmedAt: U.nowIso() });
+    Store.log('astro', astro.name, 'confirm_booking', 'booking', id,
+      { name: (Store.getUser(b.userId) || {}).name || '—' });
+    return { ok: true, message: 'Booking accepted' };
+  },
+
+  declineBooking(id, reason) {
+    const b = Store.getBooking(id);
+    if (!b) return { error: 'Booking not found' };
+    if (b.status !== 'pending') return { error: 'Only pending bookings can be declined' };
+    if (!reason || reason.trim().length < 5) return { error: 'Reason must be at least 5 characters' };
+    const astro = Store.getAstro(b.astrologerId);
+    if (!astro) return { error: 'Astrologer not found' };
+    const patch = {
+      status: 'cancelled',
+      cancelledAt: U.nowIso(),
+      cancelledBy: 'astro',
+      cancelledReason: reason.trim(),
+    };
+    let refunded = false;
+    if (b.paymentStatus === 'paid') {
+      patch.paymentStatus = 'refunded';
+      patch.refundAmount = b.amount;
+      patch.refundReason = reason.trim();
+      patch.refundedAt = U.nowIso();
+      refunded = true;
+    }
+    Store.updateBooking(id, patch);
+    Store.log('astro', astro.name, 'decline_booking', 'booking', id,
+      { name: (Store.getUser(b.userId) || {}).name || '—',
+        reason: reason.trim(), refunded, refundAmount: refunded ? b.amount : 0 });
+    return {
+      ok: true,
+      message: refunded ? `Declined & refunded ${U.money(b.amount)}` : 'Booking declined',
+    };
+  },
+
+  completeBooking(id) {
+    const b = Store.getBooking(id);
+    if (!b) return { error: 'Booking not found' };
+    if (b.status !== 'confirmed') return { error: 'Only confirmed bookings can be completed' };
+    if (b.date > U.todayIso()) return { error: 'Cannot complete a future session' };
+    const astro = Store.getAstro(b.astrologerId);
+    if (!astro) return { error: 'Astrologer not found' };
+    const patch = { status: 'completed', completedAt: U.nowIso() };
+    let collected = false;
+    if (b.paymentStatus === 'unpaid') {
+      patch.paymentStatus = 'paid';
+      patch.paymentRef = `CASH-${Date.now().toString(36)}`;
+      patch.paidAt = U.nowIso();
+      collected = true;
+    }
+    Store.updateBooking(id, patch);
+    Store.log('astro', astro.name, 'complete_booking', 'booking', id,
+      { name: (Store.getUser(b.userId) || {}).name || '—', collected, amount: b.amount });
+    return {
+      ok: true,
+      message: collected ? `Completed · ${U.money(b.amount)} cash collected` : 'Session marked complete',
+    };
+  },
 };
 
 /* ─── §4 UI primitives ───────────────────────────────────────── */
@@ -405,10 +469,7 @@ function openModal(html) {
   root.innerHTML = `<div class="modal-backdrop is-open" role="dialog" aria-modal="true"><div class="modal"><div class="modal__handle"></div>${html}</div></div>`;
   const bd = root.querySelector('.modal-backdrop');
   const modal = root.querySelector('.modal');
-
   bd.addEventListener('click', (e) => { if (e.target === bd) closeModal(); });
-
-  // focus trap
   const focusables = () => Array.from(modal.querySelectorAll(
     'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
   ));
@@ -423,7 +484,6 @@ function openModal(html) {
   };
   document.addEventListener('keydown', onKey);
   _modalCleanup = () => document.removeEventListener('keydown', onKey);
-
   const first = modal.querySelector('input, textarea, select, button');
   if (first) setTimeout(() => first.focus(), 60);
 }
@@ -449,7 +509,6 @@ function setLoading(btn, on) {
 
 function exec(fn, btn) {
   if (btn) setLoading(btn, true);
-  // small artificial delay so the spinner is visible
   setTimeout(() => {
     try {
       const res = fn();
@@ -515,10 +574,10 @@ function reasonDialog({ title, message, placeholder, confirmText = 'Confirm', da
   input.addEventListener('input', () => err.classList.remove('show'));
 }
 
-/* slot form (shared for create + edit) */
 function slotFormModal({ mode, astroId, slot, onSave }) {
   const a = Store.getAstro(astroId);
   const today = U.todayIso();
+  const defaultPrice = (a && a.fee) || 0;
   openModal(`
     <h3 class="modal__title">${mode === 'edit' ? 'Edit slot' : 'Create slot'}</h3>
     <p class="modal__message">${
@@ -548,8 +607,8 @@ function slotFormModal({ mode, astroId, slot, onSave }) {
       <div class="field">
         <label class="field__label" for="slotPrice">Fee (₹)</label>
         <input type="number" id="slotPrice" class="field__input" min="0" step="50"
-          value="${slot ? slot.price : a.fee}" required />
-        <div class="field__hint">Default is your session fee · ${U.money(a.fee)}</div>
+          value="${slot ? slot.price : defaultPrice}" required />
+        <div class="field__hint">Default is your session fee · ${U.money(defaultPrice)}</div>
         <div class="field__error" id="errPrice"></div>
       </div>
       <div class="modal__actions">
@@ -657,6 +716,84 @@ const C = {
     </div>`,
 };
 
+/* Shared binder — actions on astrologer booking cards */
+function bindAstroBookingActions(scope) {
+  (scope || document).querySelectorAll('[data-accept]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.accept;
+      confirmDialog({
+        title: 'Accept this booking?',
+        message: 'The session will move to Active and the user will be notified.',
+        confirmText: 'Accept',
+        onConfirm: (btn) => exec(() => Actions.acceptBooking(id), btn),
+      });
+    };
+  });
+  (scope || document).querySelectorAll('[data-decline]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.decline;
+      const bk = Store.getBooking(id);
+      const willRefund = bk && bk.paymentStatus === 'paid';
+      reasonDialog({
+        title: 'Decline this booking?',
+        message: willRefund
+          ? `The user already paid. They will be refunded ${U.money(bk.amount)} automatically.`
+          : 'The user will see your reason.',
+        placeholder: 'e.g. Not available at this time, please rebook',
+        confirmText: willRefund ? 'Decline & refund' : 'Decline',
+        danger: true,
+        onConfirm: (reason, btn) => exec(() => Actions.declineBooking(id, reason), btn),
+      });
+    };
+  });
+  (scope || document).querySelectorAll('[data-complete]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.complete;
+      const bk = Store.getBooking(id);
+      const willCollect = bk && bk.paymentStatus === 'unpaid';
+      confirmDialog({
+        title: 'Mark session complete?',
+        message: willCollect
+          ? `The session will be marked completed and ${U.money(bk.amount)} cash will be recorded as collected.`
+          : 'The session will be marked completed and count toward your earnings.',
+        confirmText: willCollect ? 'Complete & collect' : 'Complete',
+        onConfirm: (btn) => exec(() => Actions.completeBooking(id), btn),
+      });
+    };
+  });
+}
+
+/* Shared binder — slot edit/delete */
+function bindSlotActions(scope, astroId) {
+  (scope || document).querySelectorAll('[data-edit-slot]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.editSlot;
+      const slot = Store.getSlot(id);
+      slotFormModal({
+        mode: 'edit', astroId, slot,
+        onSave: (patch) => Actions.updateSlot(id, patch),
+      });
+    };
+  });
+  (scope || document).querySelectorAll('[data-delete-slot]').forEach(b => {
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const id = b.dataset.deleteSlot;
+      const slot = Store.getSlot(id);
+      confirmDialog({
+        title: 'Delete this slot?',
+        message: `${U.fmtDate(slot.date)} · ${slot.time} will be removed.`,
+        confirmText: 'Delete', danger: true,
+        onConfirm: (btn) => exec(() => Actions.deleteSlot(id), btn),
+      });
+    };
+  });
+}
+
 /* ─── §6 Screens ─────────────────────────────────────────────── */
 
 /* ── USER ── */
@@ -694,7 +831,7 @@ function screenUserLanding() {
         </a>
       </div>
       <div class="note">
-        <strong>Day 4 preview.</strong> Payment gateway (Razorpay) unlocks on Day 15.
+        <strong>Day 5 preview.</strong> Payment gateway (Razorpay) unlocks on Day 15.
         Booking flow unlocks on Day 14.
       </div>
       <div class="center">
@@ -792,7 +929,6 @@ function screenUserHome() {
       const input = document.getElementById('astroSearch');
       const clear = document.getElementById('searchClear');
       const list = document.getElementById('astroList');
-
       const rerenderList = () => {
         const f = filterAstrologers(all, state);
         list.innerHTML = f.length === 0
@@ -806,14 +942,12 @@ function screenUserHome() {
           render();
         };
       };
-
       input.addEventListener('input', U.debounce(() => {
         state.userQuery = input.value;
         clear.classList.toggle('show', !!input.value);
         rerenderList();
       }, 150));
       clear.onclick = () => { state.userQuery = ''; input.value = ''; clear.classList.remove('show'); rerenderList(); input.focus(); };
-
       document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => {
         state.userSpecialty = b.dataset.sp;
         document.querySelectorAll('[data-sp]').forEach(x => x.classList.toggle('active', x === b));
@@ -829,8 +963,6 @@ function screenUserHome() {
         document.querySelectorAll('[data-sort]').forEach(x => x.classList.toggle('active', x === b));
         rerenderList();
       });
-
-      // re-bind clear button in initial empty state
       const cf = document.getElementById('clearFilters');
       if (cf) cf.onclick = () => {
         state.userQuery = ''; state.userSpecialty = 'all';
@@ -933,12 +1065,20 @@ function screenUserProfile() {
 function screenAstroDashboard() {
   const a = Store.getAstro(CURRENT.astroId);
   const mine = Store.listBookings().filter(b => b.astrologerId === a.id);
-  const todayCount = mine.filter(b => b.date === U.todayIso() && b.status !== 'cancelled').length;
-  const pending = mine.filter(b => b.status === 'pending').length;
+  const today = U.todayIso();
+  const todayCount = mine.filter(b => b.date === today && b.status !== 'cancelled').length;
+  const pendingList = mine.filter(b => b.status === 'pending');
+  const pending = pendingList.length;
   const earnings = mine.filter(b => b.paymentStatus === 'paid').reduce((s, b) => s + b.amount, 0);
   const statusLine = a.status === 'approved' ? '✅ Profile approved'
     : a.status === 'pending' ? '⏳ Awaiting admin approval'
     : '❌ Not approved — see profile';
+
+  const todaySessions = mine
+    .filter(b => b.date === today && b.status !== 'cancelled')
+    .sort((x, y) => x.time.localeCompare(y.time))
+    .slice(0, 3);
+
   return {
     title: 'Dashboard',
     html: `
@@ -946,17 +1086,225 @@ function screenAstroDashboard() {
         <h2>Hi, ${U.esc(a.name.split(' ')[0])} 👋</h2>
         <p>${statusLine}</p>
       </div>
+
+      ${pending > 0 ? `
+        <div class="alert-banner">
+          <div class="alert-banner__icon">🔔</div>
+          <div class="alert-banner__text">
+            <strong>${pending} new request${pending === 1 ? '' : 's'}</strong>
+            Waiting for your response
+          </div>
+          <a class="btn btn--sm" href="#/bookings">View</a>
+        </div>
+      ` : ''}
+
       <div class="stat-grid">
-        <div class="stat"><div class="stat-val">${todayCount}</div><div class="stat-lbl">Today's bookings</div></div>
+        <div class="stat"><div class="stat-val">${todayCount}</div><div class="stat-lbl">Today's sessions</div></div>
         <div class="stat"><div class="stat-val">${pending}</div><div class="stat-lbl">Pending requests</div></div>
         <div class="stat"><div class="stat-val">${mine.length}</div><div class="stat-lbl">Total bookings</div></div>
         <div class="stat"><div class="stat-val">${U.money(earnings)}</div><div class="stat-lbl">Earnings (paid)</div></div>
       </div>
+
+      <div class="section-card">
+        <div class="section-card__title">Today's schedule</div>
+        ${todaySessions.length === 0
+          ? `<p class="muted small">No sessions scheduled for today.</p>`
+          : `<div>${todaySessions.map(b => {
+              const user = Store.getUser(b.userId);
+              return `
+                <div class="session-row" style="margin-bottom:6px">
+                  <div class="session-time">${b.time}</div>
+                  <div class="session-info">
+                    <div class="session-title">${U.esc(user ? user.name : '—')}</div>
+                    <div class="session-sub">${C.badge(b.status)}</div>
+                  </div>
+                </div>`;
+            }).join('')}</div>`}
+        <a class="btn btn--ghost btn--sm btn--block" href="#/schedule" style="margin-top:12px">View full schedule →</a>
+      </div>
+
       <div class="action-row">
         <a class="btn" href="#/slots">Manage slots</a>
         <a class="btn btn--ghost" href="#/bookings">View bookings</a>
       </div>
     `,
+  };
+}
+
+function screenAstroSchedule() {
+  const a = Store.getAstro(CURRENT.astroId);
+  const today = U.todayIso();
+  const tomorrow = U.addDaysIso(today, 1);
+  const bookings = Store.listBookings().filter(b => b.astrologerId === a.id && b.status !== 'cancelled');
+  const allSlots = Store.listSlots(a.id);
+  const bookedSlotIds = new Set(bookings.map(b => b.slotId));
+  const futureSlots = allSlots.filter(s => !bookedSlotIds.has(s.id) && s.date >= today);
+
+  // group by date
+  const byDate = {};
+  const ensure = (d) => { if (!byDate[d]) byDate[d] = { sessions: [], slots: [] }; };
+  bookings.filter(b => b.date >= today).forEach(b => { ensure(b.date); byDate[b.date].sessions.push(b); });
+  futureSlots.forEach(s => { ensure(s.date); byDate[s.date].slots.push(s); });
+
+  const dates = Object.keys(byDate).sort();
+  const groupsHtml = dates.map(date => {
+    const g = byDate[date];
+    const rel = date === today ? 'Today' : date === tomorrow ? 'Tomorrow' : null;
+    const items = [
+      ...g.sessions.map(s => ({ kind: 'session', data: s, time: s.time })),
+      ...g.slots.map(s => ({ kind: 'slot', data: s, time: s.time })),
+    ].sort((x, y) => x.time.localeCompare(y.time));
+
+    const rows = items.map(item => {
+      if (item.kind === 'session') {
+        const b = item.data;
+        const user = Store.getUser(b.userId);
+        const canAct = b.status === 'pending';
+        const canComplete = b.status === 'confirmed' && b.date <= today;
+        return `
+          <div class="session-row">
+            <div class="session-time">${b.time}</div>
+            <div class="session-info">
+              <div class="session-title">${U.esc(user ? user.name : '—')}</div>
+              <div class="session-sub">
+                ${C.badge(b.status)}
+                <span>${U.money(b.amount)}</span>
+                <span>· ${b.paymentMode === 'online' ? 'Online' : 'Cash'}</span>
+              </div>
+            </div>
+            <div class="row-side">
+              ${canAct ? `
+                <button class="icon-btn icon-btn--sm" style="background:var(--c-success-soft);color:var(--c-success)" data-accept="${b.id}" title="Accept">✓</button>
+                <button class="icon-btn icon-btn--sm" style="background:var(--c-danger-soft);color:var(--c-danger)" data-decline="${b.id}" title="Decline">✕</button>
+              ` : canComplete ? `
+                <button class="icon-btn icon-btn--sm" style="background:var(--c-primary-soft);color:var(--c-primary)" data-complete="${b.id}" title="Complete">✓</button>
+              ` : `<span class="muted tiny">${b.status}</span>`}
+            </div>
+          </div>`;
+      } else {
+        const s = item.data;
+        return `
+          <div class="session-row session-row--slot">
+            <div class="session-time">${s.time}</div>
+            <div class="session-info">
+              <div class="session-title">Available slot</div>
+              <div class="session-sub">${s.duration} min · ${U.money(s.price)}</div>
+            </div>
+            <div class="row-side">
+              <button class="icon-btn icon-btn--sm" data-edit-slot="${s.id}" title="Edit">✏️</button>
+              <button class="icon-btn icon-btn--sm" data-delete-slot="${s.id}" title="Delete">🗑️</button>
+            </div>
+          </div>`;
+      }
+    }).join('');
+
+    return `
+      <div class="schedule-group">
+        <div class="schedule-date">
+          ${U.fmtDate(date)}
+          ${rel ? `<span class="schedule-date__rel">· ${rel}</span>` : ''}
+        </div>
+        ${rows}
+      </div>`;
+  }).join('');
+
+  return {
+    title: 'Schedule',
+    html: `
+      <div class="page-head with-action">
+        <div>
+          <h2>Schedule</h2>
+          <p>${dates.length ? `${dates.length} upcoming day${dates.length === 1 ? '' : 's'}` : 'Nothing scheduled'}</p>
+        </div>
+        <a class="btn btn--sm btn--ghost" href="#/slots">Manage slots</a>
+      </div>
+      ${dates.length === 0
+        ? C.empty('🗓', 'Nothing scheduled', 'Create slots to start receiving bookings.',
+            `<a class="btn" href="#/slots">Manage slots</a>`)
+        : groupsHtml}
+    `,
+    mount() {
+      bindAstroBookingActions(document);
+      bindSlotActions(document, a.id);
+    },
+  };
+}
+
+function screenAstroBookings() {
+  const a = Store.getAstro(CURRENT.astroId);
+  const all = Store.listBookings().filter(b => b.astrologerId === a.id);
+  const pending = all.filter(b => b.status === 'pending');
+  const active = all.filter(b => b.status === 'confirmed');
+  const history = all.filter(b => b.status === 'completed' || b.status === 'cancelled')
+    .sort((x, y) => (y.date + y.time).localeCompare(x.date + x.time));
+
+  const tab = state.astroBookingTab;
+  const items = tab === 'requests' ? pending : tab === 'active' ? active : history;
+
+  const renderCard = (b) => {
+    const user = Store.getUser(b.userId);
+    const today = U.todayIso();
+    const canAct = b.status === 'pending';
+    const canComplete = b.status === 'confirmed' && b.date <= today;
+    return `
+      <div class="card booking-card">
+        <div class="booking-row">
+          <div>
+            <div class="row-title">${U.esc(user ? user.name : '—')}</div>
+            <div class="muted small">${U.fmtDate(b.date)} · ${b.time}</div>
+            ${b.status === 'confirmed' && user && user.phone ? `<div class="muted tiny">📞 ${U.esc(user.phone)}</div>` : ''}
+          </div>
+          ${C.badge(b.status)}
+        </div>
+        ${C.paymentBadges(b)}
+        <div class="booking-row muted small">
+          <span>#${b.id.toUpperCase()}</span>
+          <span>${U.money(b.amount)}</span>
+        </div>
+        ${b.paymentRef ? `<div class="muted tiny mono">Ref: ${U.esc(b.paymentRef)}</div>` : ''}
+        ${b.refundAmount ? `<div class="muted tiny">Refunded ${U.money(b.refundAmount)}${b.refundReason ? ' · ' + U.esc(b.refundReason) : ''}</div>` : ''}
+        ${(canAct || canComplete) ? `
+          <div class="quick-actions">
+            ${canAct ? `
+              <button class="btn btn--success btn--sm" data-accept="${b.id}">✓ Accept</button>
+              <button class="btn btn--danger-ghost btn--sm" data-decline="${b.id}">✕ Decline</button>
+            ` : ''}
+            ${canComplete ? `
+              <button class="btn btn--sm" data-complete="${b.id}">✓ Mark complete</button>
+            ` : ''}
+          </div>
+        ` : ''}
+      </div>`;
+  };
+
+  const emptyForTab = tab === 'requests'
+    ? C.empty('🔔', 'No pending requests', 'New booking requests will appear here.')
+    : tab === 'active'
+    ? C.empty('📅', 'No active bookings', 'Accepted sessions will show up here.')
+    : C.empty('📜', 'No history yet', 'Completed and cancelled sessions will appear here.');
+
+  return {
+    title: 'Bookings',
+    html: `
+      <div class="page-head"><h2>Bookings</h2></div>
+      <div class="tabs">
+        <button class="tab ${tab === 'requests' ? 'active' : ''}" data-tab="requests">
+          Requests ${pending.length ? `<span class="tab-count">${pending.length}</span>` : ''}
+        </button>
+        <button class="tab ${tab === 'active' ? 'active' : ''}" data-tab="active">Active</button>
+        <button class="tab ${tab === 'history' ? 'active' : ''}" data-tab="history">History</button>
+      </div>
+      <div id="astroBookingList">
+        ${items.length === 0 ? emptyForTab : `<div class="list">${items.map(renderCard).join('')}</div>`}
+      </div>
+    `,
+    mount() {
+      document.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => {
+        state.astroBookingTab = b.dataset.tab;
+        render();
+      });
+      bindAstroBookingActions(document);
+    },
   };
 }
 
@@ -976,7 +1324,7 @@ function screenAstroSlots() {
     const booked = bookedIds.has(s.id);
     const isPast = U.isPastDate(s.date);
     return `
-      <div class="card booking-card" data-slot-row="${s.id}">
+      <div class="card booking-card">
         <div class="booking-row">
           <div>
             <div class="row-title">${U.fmtDate(s.date)}</div>
@@ -984,14 +1332,12 @@ function screenAstroSlots() {
           </div>
           ${booked ? C.badge('confirmed') : isPast ? C.badge('completed') : C.badge('approved')}
         </div>
-        <div class="booking-row" style="justify-content:flex-end">
-          ${!booked && !isPast ? `
-            <button class="btn btn--ghost btn--sm" data-action="edit" data-id="${s.id}">Edit</button>
-            <button class="btn btn--danger-ghost btn--sm" data-action="delete" data-id="${s.id}">Delete</button>
-          ` : `
-            <span class="muted tiny">${booked ? 'Booked — locked' : 'Past slot'}</span>
-          `}
-        </div>
+        ${!booked && !isPast ? `
+          <div class="quick-actions">
+            <button class="btn btn--ghost btn--sm" data-edit-slot="${s.id}">Edit</button>
+            <button class="btn btn--danger-ghost btn--sm" data-delete-slot="${s.id}">Delete</button>
+          </div>
+        ` : `<div class="muted tiny" style="margin-top:6px">${booked ? 'Booked — locked' : 'Past slot'}</div>`}
       </div>`;
   };
 
@@ -1015,30 +1361,6 @@ function screenAstroSlots() {
       </div>
     `,
     mount() {
-      const bindRowActions = () => {
-        document.querySelectorAll('[data-slot-row] [data-action]').forEach(btn => {
-          btn.onclick = (e) => {
-            e.stopPropagation();
-            const id = btn.dataset.id;
-            const action = btn.dataset.action;
-            const slot = Store.getSlot(id);
-            if (action === 'edit') {
-              slotFormModal({
-                mode: 'edit', astroId: a.id, slot,
-                onSave: (patch) => Actions.updateSlot(id, patch),
-              });
-            } else if (action === 'delete') {
-              confirmDialog({
-                title: 'Delete this slot?',
-                message: `${U.fmtDate(slot.date)} · ${slot.time} will be removed. Users won't be able to book it.`,
-                confirmText: 'Delete', danger: true,
-                onConfirm: (b) => exec(() => Actions.deleteSlot(id), b),
-              });
-            }
-          };
-        });
-      };
-
       const bindAdd = (btn) => {
         if (!btn) return;
         btn.onclick = () => slotFormModal({
@@ -1048,8 +1370,6 @@ function screenAstroSlots() {
       };
       bindAdd(document.getElementById('addSlotBtn'));
       bindAdd(document.getElementById('emptyAddBtn'));
-
-      // tab switching (local to slots screen, not shared)
       const renderTab = (tab) => {
         const list = document.getElementById('slotList');
         if (tab === 'upcoming') {
@@ -1063,28 +1383,14 @@ function screenAstroSlots() {
             ? C.empty('🗓', 'No past slots', 'Completed slots will show here.')
             : `<div class="list">${past.map(renderRow).join('')}</div>`;
         }
-        bindRowActions();
+        bindSlotActions(list, a.id);
       };
-      bindRowActions();
+      bindSlotActions(document, a.id);
       document.querySelectorAll('[data-stab]').forEach(t => t.onclick = () => {
         document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('active', x === t));
         renderTab(t.dataset.stab);
       });
     },
-  };
-}
-
-function screenAstroBookings() {
-  const bookings = Store.listBookings().filter(b => b.astrologerId === CURRENT.astroId);
-  return {
-    title: 'Bookings',
-    html: `
-      <div class="page-head"><h2>Booking requests</h2></div>
-      ${bookings.length === 0
-        ? C.empty('📋', 'No bookings yet', 'Bookings from users will appear here.')
-        : `<div class="list">${bookings.map(b => C.bookingCard(b, { showUser: true })).join('')}</div>`}
-      <div class="note">Accept/decline unlocks on Day 7.</div>
-    `,
   };
 }
 
@@ -1402,7 +1708,7 @@ function screenAdminBookingDetail(params) {
       <div class="section-card">
         <div class="section-card__title">Cancellation</div>
         <p class="body-text"><strong>Reason:</strong> ${U.esc(b.cancelledReason)}</p>
-        ${b.cancelledAt ? `<p class="body-text muted small">Cancelled ${U.relTime(b.cancelledAt)}</p>` : ''}
+        ${b.cancelledAt ? `<p class="body-text muted small">Cancelled ${U.relTime(b.cancelledAt)}${b.cancelledBy ? ' · by ' + U.esc(b.cancelledBy) : ''}</p>` : ''}
       </div>` : ''}
 
       ${events.length > 0 ? `
@@ -1603,13 +1909,14 @@ function screenAdminAudit() {
         : `<div class="list">${logs.map(l => {
             const meta = AUDIT_META[l.action] || { icon: '•', cls: '', label: l.action };
             const name = (l.meta && l.meta.name) || l.targetId;
+            const actorLabel = l.actorRole === 'astro' ? '🔮 ' : '🛡️ ';
             return `
               <div class="card">
                 <div class="row" style="grid-template-columns:32px 1fr auto;gap:10px">
                   <div class="timeline-icon timeline-icon--${meta.cls}">${meta.icon}</div>
                   <div class="row-info">
                     <div class="row-title" style="font-size:14px">${meta.label} · ${U.esc(name)}</div>
-                    <div class="row-sub">${U.esc(l.actorName)}</div>
+                    <div class="row-sub">${actorLabel}${U.esc(l.actorName)}</div>
                     ${l.meta && l.meta.reason ? `<div class="row-sub">${U.esc(l.meta.reason)}</div>` : ''}
                   </div>
                   <div class="muted tiny" style="white-space:nowrap">${U.relTime(l.ts)}</div>
@@ -1635,6 +1942,7 @@ const SCREENS = {
   userBookings: screenUserBookings,
   userProfile: screenUserProfile,
   astroDashboard: screenAstroDashboard,
+  astroSchedule: screenAstroSchedule,
   astroSlots: screenAstroSlots,
   astroBookings: screenAstroBookings,
   astroProfile: screenAstroProfile,
@@ -1659,6 +1967,7 @@ const ROUTES = {
   },
   astro: {
     '/dashboard': 'astroDashboard',
+    '/schedule':  'astroSchedule',
     '/slots':     'astroSlots',
     '/bookings':  'astroBookings',
     '/profile':   'astroProfile',
@@ -1697,6 +2006,13 @@ function matchRoute(path) {
 function renderBottomNav(path) {
   const nav = document.getElementById('bottomNav');
   if (!nav) return;
+
+  let pendingBookings = 0;
+  if (APP === 'astro') {
+    pendingBookings = Store.listBookings()
+      .filter(b => b.astrologerId === CURRENT.astroId && b.status === 'pending').length;
+  }
+
   const sets = {
     user: [
       { path:'/home',     label:'Home',     icon:'🏠' },
@@ -1705,8 +2021,9 @@ function renderBottomNav(path) {
     ],
     astro: [
       { path:'/dashboard', label:'Home',     icon:'📊' },
+      { path:'/schedule',  label:'Schedule', icon:'📅' },
       { path:'/slots',     label:'Slots',    icon:'🕐' },
-      { path:'/bookings',  label:'Bookings', icon:'📋' },
+      { path:'/bookings',  label:'Bookings', icon:'📋', badge: pendingBookings },
       { path:'/profile',   label:'Profile',  icon:'👤' },
     ],
     admin: [
@@ -1720,8 +2037,9 @@ function renderBottomNav(path) {
   const items = sets[APP] || [];
   nav.innerHTML = items.map(it => {
     const active = path === it.path || path.startsWith(it.path + '/');
+    const badge = it.badge ? `<span class="nav-badge">${it.badge}</span>` : '';
     return `<a class="nav-item ${active ? 'active' : ''}" href="#${it.path}">
-      <span class="nav-icon">${it.icon}</span>
+      <span class="nav-icon">${it.icon}${badge}</span>
       <span class="nav-label">${it.label}</span>
     </a>`;
   }).join('');
