@@ -1,10 +1,6 @@
 /* ================================================================
-   BookMyAstrologer — App (Day 3)
+   BookMyAstrologer — App (Day 4)
    Three apps in one codebase: User · Astrologer · Admin
-   Architecture:
-     §1 Constants         §4 UI primitives
-     §2 Utilities         §5 Shared components
-     §3 Store + Actions   §6 Screens  §7 Routes  §8 Router  §9 Boot
    ================================================================ */
 
 /* ─── §1 Constants ───────────────────────────────────────────── */
@@ -12,8 +8,9 @@ const APP = document.body.dataset.app || 'user';
 const CONFIG = {
   appName: 'BookMyAstrologer',
   currency: '₹',
-  storageKey: 'bma_db_v3',
-  version: 'day3',
+  storageKey: 'bma_db_v4',
+  version: 'day4',
+  buildLabel: 'v4 · Day 4',
 };
 const CURRENT = {
   userId: 'u1',
@@ -27,15 +24,23 @@ const AUDIT_META = {
   unban_user:         { icon: '🔓', cls: 'success', label: 'Unbanned user' },
   cancel_booking:     { icon: '✕', cls: 'danger',  label: 'Cancelled booking' },
   mark_paid:          { icon: '💵', cls: 'success', label: 'Marked payment received' },
+  create_slot:        { icon: '➕', cls: 'success', label: 'Created slot' },
+  update_slot:        { icon: '✏️', cls: 'info',    label: 'Updated slot' },
+  delete_slot:        { icon: '🗑️', cls: 'danger',  label: 'Deleted slot' },
 };
 
-/* Global UI state (persists across renders) */
 const state = {
+  // admin
   adminAstroTab: 'pending',
   adminUserFilter: 'all',
   adminUserQuery: '',
   adminBookingFilter: 'all',
   adminBookingQuery: '',
+  // user browse
+  userQuery: '',
+  userSpecialty: 'all',
+  userPriceBand: 'all',
+  userSort: 'rating',
 };
 
 /* ─── §2 Utilities ───────────────────────────────────────────── */
@@ -70,12 +75,12 @@ const U = {
     let t;
     return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
   },
+  isPastDate: (iso) => iso < U.todayIso(),
 };
 
-/* ─── §3 Store (data layer) ──────────────────────────────────── */
+/* ─── §3 Store ───────────────────────────────────────────────── */
 const Store = {
   _cache: null,
-
   load() {
     if (this._cache) return this._cache;
     try {
@@ -86,33 +91,30 @@ const Store = {
     this.save();
     return this._cache;
   },
-
   save() {
     try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(this._cache)); } catch (e) {}
   },
-
   reset() {
     try { localStorage.removeItem(CONFIG.storageKey); } catch (e) {}
     this._cache = null;
     this.load();
   },
-
-  /* getters */
-  getAstro:    (id) => Store.load().astrologers.find(a => a.id === id),
-  getUser:     (id) => Store.load().users.find(u => u.id === id),
-  getBooking:  (id) => Store.load().bookings.find(b => b.id === id),
-  getSlot:     (id) => Store.load().slots.find(s => s.id === id),
-
+  getAstro:   (id) => Store.load().astrologers.find(a => a.id === id),
+  getUser:    (id) => Store.load().users.find(u => u.id === id),
+  getBooking: (id) => Store.load().bookings.find(b => b.id === id),
+  getSlot:    (id) => Store.load().slots.find(s => s.id === id),
   listAstros:    (status) => status ? Store.load().astrologers.filter(a => a.status === status) : Store.load().astrologers,
-  listUsers:     ()       => Store.load().users,
-  listBookings:  ()       => Store.load().bookings,
+  listUsers:     () => Store.load().users,
+  listBookings:  () => Store.load().bookings,
   listSlots:     (astroId) => astroId ? Store.load().slots.filter(s => s.astrologerId === astroId) : Store.load().slots,
-  listAudit:     ()       => [...Store.load().audit].sort((a, b) => b.ts.localeCompare(a.ts)),
+  listAudit:     () => [...Store.load().audit].sort((a, b) => b.ts.localeCompare(a.ts)),
   listBookingAudit: (bookingId) => Store.load().audit
     .filter(l => l.targetType === 'booking' && l.targetId === bookingId)
     .sort((a, b) => a.ts.localeCompare(b.ts)),
+  listSlotAudit: (slotId) => Store.load().audit
+    .filter(l => l.targetType === 'slot' && l.targetId === slotId)
+    .sort((a, b) => a.ts.localeCompare(b.ts)),
 
-  /* mutations */
   updateAstro(id, patch) {
     const a = this.load().astrologers.find(x => x.id === id);
     if (!a) return null;
@@ -133,6 +135,26 @@ const Store = {
     Object.assign(b, patch);
     this.save();
     return b;
+  },
+  addSlot(slot) {
+    this.load().slots.push(slot);
+    this.save();
+    return slot;
+  },
+  updateSlot(id, patch) {
+    const s = this.load().slots.find(x => x.id === id);
+    if (!s) return null;
+    Object.assign(s, patch);
+    this.save();
+    return s;
+  },
+  removeSlot(id) {
+    const arr = this.load().slots;
+    const i = arr.findIndex(s => s.id === id);
+    if (i < 0) return false;
+    arr.splice(i, 1);
+    this.save();
+    return true;
   },
   log(actorRole, actorName, action, targetType, targetId, meta) {
     this.load().audit.push({
@@ -175,6 +197,14 @@ const Store = {
         kyc:{ pan:'', aadhaarMasked:'', verified:false },
         statusReason:'PAN number did not match uploaded document. Please re-submit.',
         statusUpdatedAt: daysAgo(5), submittedAt: daysAgo(7) },
+      { id:'a5', name:'Astro Vikram Rao', specialty:'Vedic Astrology', city:'Hyderabad',
+        languages:['Telugu','English'], fee:1200, rating:4.7, reviews:58, experience:20,
+        status:'approved', bio:'Specialist in career and business astrology. Consults by appointment.',
+        kyc:{ pan:'VRAO1234K', aadhaarMasked:'XXXX XXXX 8877', verified:true } },
+      { id:'a6', name:'Pooja Desai', specialty:'Numerology', city:'Ahmedabad',
+        languages:['Gujarati','Hindi','English'], fee:350, rating:4.5, reviews:62, experience:6,
+        status:'approved', bio:'Numerologist and vastu consultant for homes.',
+        kyc:{ pan:'PDES5678M', aadhaarMasked:'XXXX XXXX 3322', verified:true } },
     ];
 
     const slots = [
@@ -184,6 +214,7 @@ const Store = {
       { id:'s3', astrologerId:'a1', date: day(1), time:'11:00', duration:30, price:500 },
       { id:'s6', astrologerId:'a2', date: day(0), time:'12:00', duration:45, price:750 },
       { id:'s7', astrologerId:'a2', date: day(1), time:'14:00', duration:45, price:750 },
+      { id:'s8', astrologerId:'a5', date: day(0), time:'16:00', duration:60, price:1200 },
     ];
 
     const bookings = [
@@ -215,9 +246,6 @@ const Store = {
       { id:'log-s1', ts: daysAgo(3), actorRole:'admin', actorName:'Super Admin',
         action:'approve_astrologer', targetType:'astrologer', targetId:'a1',
         meta:{ name:'Pandit Rajesh Sharma' } },
-      { id:'log-s2', ts: daysAgo(5), actorRole:'admin', actorName:'Super Admin',
-        action:'reject_astrologer', targetType:'astrologer', targetId:'a4',
-        meta:{ name:'Sunita Kapoor', reason:'PAN number did not match uploaded document.' } },
       { id:'log-s3', ts: daysAgo(4), actorRole:'admin', actorName:'Super Admin',
         action:'cancel_booking', targetType:'booking', targetId:'b4',
         meta:{ reason:'Astrologer unavailable', refunded:true, refundAmount:750 } },
@@ -227,7 +255,7 @@ const Store = {
   },
 };
 
-/* ─── §3b Actions (business logic) ───────────────────────────── */
+/* ─── §3b Actions ────────────────────────────────────────────── */
 const Actions = {
   approveAstrologer(id) {
     const a = Store.getAstro(id);
@@ -237,7 +265,6 @@ const Actions = {
     Store.log('admin', CURRENT.adminName, 'approve_astrologer', 'astrologer', id, { name: a.name });
     return { ok: true, message: `Approved ${a.name}` };
   },
-
   rejectAstrologer(id, reason) {
     const a = Store.getAstro(id);
     if (!a) return { error: 'Astrologer not found' };
@@ -246,7 +273,6 @@ const Actions = {
     Store.log('admin', CURRENT.adminName, 'reject_astrologer', 'astrologer', id, { name: a.name, reason: reason.trim() });
     return { ok: true, message: `Rejected ${a.name}` };
   },
-
   banUser(id, reason) {
     const u = Store.getUser(id);
     if (!u) return { error: 'User not found' };
@@ -256,7 +282,6 @@ const Actions = {
     Store.log('admin', CURRENT.adminName, 'ban_user', 'user', id, { name: u.name, reason: reason.trim() });
     return { ok: true, message: `Banned ${u.name}` };
   },
-
   unbanUser(id) {
     const u = Store.getUser(id);
     if (!u) return { error: 'User not found' };
@@ -265,19 +290,15 @@ const Actions = {
     Store.log('admin', CURRENT.adminName, 'unban_user', 'user', id, { name: u.name });
     return { ok: true, message: `Unbanned ${u.name}` };
   },
-
   cancelBooking(id, reason) {
     const b = Store.getBooking(id);
     if (!b) return { error: 'Booking not found' };
     if (b.status === 'cancelled') return { error: 'Already cancelled' };
     if (b.status === 'completed') return { error: 'Cannot cancel a completed session' };
     if (!reason || reason.trim().length < 5) return { error: 'Reason must be at least 5 characters' };
-
     const patch = {
-      status: 'cancelled',
-      cancelledAt: U.nowIso(),
-      cancelledBy: 'admin',
-      cancelledReason: reason.trim(),
+      status: 'cancelled', cancelledAt: U.nowIso(),
+      cancelledBy: 'admin', cancelledReason: reason.trim(),
     };
     let refunded = false;
     if (b.paymentStatus === 'paid') {
@@ -290,13 +311,11 @@ const Actions = {
     Store.updateBooking(id, patch);
     Store.log('admin', CURRENT.adminName, 'cancel_booking', 'booking', id,
       { reason: reason.trim(), refunded, refundAmount: refunded ? b.amount : 0 });
-
     return {
       ok: true,
       message: refunded ? `Cancelled & refunded ${U.money(b.amount)}` : 'Booking cancelled',
     };
   },
-
   markBookingPaid(id, ref) {
     const b = Store.getBooking(id);
     if (!b) return { error: 'Booking not found' };
@@ -311,52 +330,146 @@ const Actions = {
       { amount: b.amount, ref: ref || 'cash' });
     return { ok: true, message: 'Marked as paid' };
   },
+
+  /* ── Slot CRUD (astrologer) ── */
+  createSlot(astroId, { date, time, duration, price }) {
+    const a = Store.getAstro(astroId);
+    if (!a) return { error: 'Astrologer not found' };
+    if (a.status !== 'approved') return { error: 'Your profile must be approved first' };
+    if (!date || !time) return { error: 'Date and time are required' };
+    if (U.isPastDate(date)) return { error: 'Cannot create a slot in the past' };
+    const dup = Store.listSlots(astroId).find(s => s.date === date && s.time === time);
+    if (dup) return { error: 'A slot already exists at that date & time' };
+
+    const slot = {
+      id: U.uid('slot'),
+      astrologerId: astroId,
+      date, time,
+      duration: Number(duration) || 30,
+      price: Number(price) || a.fee,
+      createdAt: U.nowIso(),
+    };
+    Store.addSlot(slot);
+    Store.log('astro', a.name, 'create_slot', 'slot', slot.id,
+      { name: a.name, date, time });
+    return { ok: true, message: 'Slot created', slot };
+  },
+  updateSlot(slotId, patch) {
+    const s = Store.getSlot(slotId);
+    if (!s) return { error: 'Slot not found' };
+    const booked = Store.listBookings().some(b => b.slotId === s.id && b.status !== 'cancelled');
+    if (booked) return { error: 'Cannot edit a booked slot' };
+    if (U.isPastDate(s.date)) return { error: 'Cannot edit a past slot' };
+    if (patch.date && U.isPastDate(patch.date)) return { error: 'Date cannot be in the past' };
+    if (patch.date && patch.time) {
+      const dup = Store.listSlots(s.astrologerId)
+        .find(x => x.id !== s.id && x.date === patch.date && x.time === patch.time);
+      if (dup) return { error: 'A slot already exists at that date & time' };
+    }
+    Store.updateSlot(slotId, patch);
+    Store.log('astro', Store.getAstro(s.astrologerId).name, 'update_slot', 'slot', slotId,
+      { date: patch.date || s.date, time: patch.time || s.time });
+    return { ok: true, message: 'Slot updated' };
+  },
+  deleteSlot(slotId) {
+    const s = Store.getSlot(slotId);
+    if (!s) return { error: 'Slot not found' };
+    const booked = Store.listBookings().some(b => b.slotId === s.id && b.status !== 'cancelled');
+    if (booked) return { error: 'Cannot delete a booked slot' };
+    Store.removeSlot(slotId);
+    Store.log('astro', Store.getAstro(s.astrologerId).name, 'delete_slot', 'slot', slotId,
+      { date: s.date, time: s.time });
+    return { ok: true, message: 'Slot deleted' };
+  },
 };
 
-/* ─── §4 UI primitives ────────────────────────────────────────── */
+/* ─── §4 UI primitives ───────────────────────────────────────── */
 let _toastTimer;
-function toast(msg) {
+function toast(msg, type = 'default') {
   const t = document.getElementById('toast');
   if (!t) return;
-  t.textContent = msg;
-  t.classList.add('show');
+  const iconMap = { success: '✓', error: '!', info: 'i', default: '' };
+  const cls = type !== 'default' ? `toast--${type}` : '';
+  const icon = iconMap[type];
+  t.className = `toast ${cls}`;
+  t.innerHTML = (icon ? `<span class="toast__icon">${icon}</span>` : '') +
+                `<span class="toast__text">${U.esc(msg)}</span>`;
+  requestAnimationFrame(() => t.classList.add('show'));
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
+let _modalCleanup = null;
 function openModal(html) {
   const root = document.getElementById('modalRoot');
-  root.innerHTML = `<div class="modal-backdrop is-open"><div class="modal">${html}</div></div>`;
+  root.innerHTML = `<div class="modal-backdrop is-open" role="dialog" aria-modal="true"><div class="modal"><div class="modal__handle"></div>${html}</div></div>`;
   const bd = root.querySelector('.modal-backdrop');
+  const modal = root.querySelector('.modal');
+
   bd.addEventListener('click', (e) => { if (e.target === bd) closeModal(); });
-  // auto-focus first input
-  const inp = bd.querySelector('input, textarea');
-  if (inp) setTimeout(() => inp.focus(), 50);
+
+  // focus trap
+  const focusables = () => Array.from(modal.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  ));
+  const onKey = (e) => {
+    if (e.key === 'Escape') { e.preventDefault(); closeModal(); return; }
+    if (e.key !== 'Tab') return;
+    const els = focusables();
+    if (!els.length) return;
+    const first = els[0], last = els[els.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
+  document.addEventListener('keydown', onKey);
+  _modalCleanup = () => document.removeEventListener('keydown', onKey);
+
+  const first = modal.querySelector('input, textarea, select, button');
+  if (first) setTimeout(() => first.focus(), 60);
 }
 function closeModal() {
+  if (_modalCleanup) { _modalCleanup(); _modalCleanup = null; }
   const root = document.getElementById('modalRoot');
   if (root) root.innerHTML = '';
 }
 
-/* run an action, then refresh + toast */
-function exec(fn) {
-  try {
-    const res = fn();
-    if (!res) return;
-    if (res.ok) {
-      closeModal();
-      render();
-      toast(res.message || 'Done');
-    } else if (res.error) {
-      toast(res.error);
-    }
-  } catch (err) {
-    console.error(err);
-    toast('Something went wrong');
+function setLoading(btn, on) {
+  if (!btn) return;
+  if (on) {
+    btn.dataset.original = btn.innerHTML;
+    btn.classList.add('is-loading');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="btn__spinner"></span>${btn.dataset.original}`;
+  } else {
+    btn.classList.remove('is-loading');
+    btn.disabled = false;
+    if (btn.dataset.original) btn.innerHTML = btn.dataset.original;
   }
 }
 
-/* reusable confirm dialog */
+function exec(fn, btn) {
+  if (btn) setLoading(btn, true);
+  // small artificial delay so the spinner is visible
+  setTimeout(() => {
+    try {
+      const res = fn();
+      if (btn) setLoading(btn, false);
+      if (!res) return;
+      if (res.ok) {
+        closeModal();
+        render();
+        toast(res.message || 'Done', 'success');
+      } else if (res.error) {
+        toast(res.error, 'error');
+      }
+    } catch (err) {
+      console.error(err);
+      if (btn) setLoading(btn, false);
+      toast('Something went wrong', 'error');
+    }
+  }, 180);
+}
+
 function confirmDialog({ title, message, confirmText = 'Confirm', danger = false, onConfirm }) {
   openModal(`
     <h3 class="modal__title">${U.esc(title)}</h3>
@@ -367,12 +480,11 @@ function confirmDialog({ title, message, confirmText = 'Confirm', danger = false
     </div>
   `);
   document.querySelector('[data-close]').onclick = closeModal;
-  document.querySelector('[data-confirm]').onclick = () => {
-    if (onConfirm) onConfirm();
+  document.querySelector('[data-confirm]').onclick = (e) => {
+    if (onConfirm) onConfirm(e.currentTarget);
   };
 }
 
-/* reusable prompt-for-reason dialog */
 function reasonDialog({ title, message, placeholder, confirmText = 'Confirm', danger = false, onConfirm }) {
   openModal(`
     <h3 class="modal__title">${U.esc(title)}</h3>
@@ -380,7 +492,7 @@ function reasonDialog({ title, message, placeholder, confirmText = 'Confirm', da
     <div class="field">
       <label class="field__label" for="reasonInput">Reason</label>
       <textarea id="reasonInput" class="field__input" placeholder="${U.esc(placeholder || 'Type your reason…')}" maxlength="300"></textarea>
-      <div class="field__error" id="reasonError" style="display:none"></div>
+      <div class="field__error" id="reasonError"></div>
     </div>
     <div class="modal__actions">
       <button class="btn btn--ghost" data-close>Cancel</button>
@@ -390,51 +502,120 @@ function reasonDialog({ title, message, placeholder, confirmText = 'Confirm', da
   const input = document.getElementById('reasonInput');
   const err = document.getElementById('reasonError');
   document.querySelector('[data-close]').onclick = closeModal;
-  document.querySelector('[data-confirm]').onclick = () => {
+  document.querySelector('[data-confirm]').onclick = (e) => {
     const v = input.value.trim();
     if (v.length < 5) {
       err.textContent = 'Please enter at least 5 characters';
-      err.style.display = 'block';
+      err.classList.add('show');
       input.focus();
       return;
     }
-    onConfirm(v);
+    onConfirm(v, e.currentTarget);
   };
-  input.addEventListener('input', () => { err.style.display = 'none'; });
+  input.addEventListener('input', () => err.classList.remove('show'));
+}
+
+/* slot form (shared for create + edit) */
+function slotFormModal({ mode, astroId, slot, onSave }) {
+  const a = Store.getAstro(astroId);
+  const today = U.todayIso();
+  openModal(`
+    <h3 class="modal__title">${mode === 'edit' ? 'Edit slot' : 'Create slot'}</h3>
+    <p class="modal__message">${
+      mode === 'edit'
+        ? 'Update the date, time or fee. Booked slots cannot be edited.'
+        : 'Add a new bookable slot to your calendar.'
+    }</p>
+    <form id="slotForm" novalidate>
+      <div class="field">
+        <label class="field__label" for="slotDate">Date</label>
+        <input type="date" id="slotDate" class="field__input" min="${today}"
+          value="${slot ? slot.date : today}" required />
+        <div class="field__error" id="errDate"></div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="slotTime">Time</label>
+        <input type="time" id="slotTime" class="field__input"
+          value="${slot ? slot.time : '10:00'}" required />
+        <div class="field__error" id="errTime"></div>
+      </div>
+      <div class="field">
+        <label class="field__label" for="slotDuration">Duration (minutes)</label>
+        <select id="slotDuration" class="field__input">
+          ${[15, 30, 45, 60].map(n => `<option value="${n}" ${(slot && slot.duration === n) || (!slot && n === 30) ? 'selected' : ''}>${n} minutes</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="slotPrice">Fee (₹)</label>
+        <input type="number" id="slotPrice" class="field__input" min="0" step="50"
+          value="${slot ? slot.price : a.fee}" required />
+        <div class="field__hint">Default is your session fee · ${U.money(a.fee)}</div>
+        <div class="field__error" id="errPrice"></div>
+      </div>
+      <div class="modal__actions">
+        <button type="button" class="btn btn--ghost" data-close>Cancel</button>
+        <button type="submit" class="btn">${mode === 'edit' ? 'Save changes' : 'Create slot'}</button>
+      </div>
+    </form>
+  `);
+  document.querySelector('[data-close]').onclick = closeModal;
+
+  document.getElementById('slotForm').onsubmit = (e) => {
+    e.preventDefault();
+    const btn = e.target.querySelector('[type=submit]');
+    const date = document.getElementById('slotDate').value;
+    const time = document.getElementById('slotTime').value;
+    const duration = Number(document.getElementById('slotDuration').value);
+    const price = Number(document.getElementById('slotPrice').value);
+
+    let bad = false;
+    const err = (id, msg) => {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.toggle('show', !!msg);
+      if (msg) bad = true;
+    };
+    err('errDate', !date ? 'Pick a date' : U.isPastDate(date) ? 'Cannot be in the past' : '');
+    err('errTime', !time ? 'Pick a time' : '');
+    err('errPrice', price <= 0 ? 'Enter a valid fee' : '');
+    if (bad) return;
+
+    setLoading(btn, true);
+    setTimeout(() => {
+      const res = onSave({ date, time, duration, price });
+      setLoading(btn, false);
+      if (res.ok) { closeModal(); render(); toast(res.message, 'success'); }
+      else toast(res.error, 'error');
+    }, 180);
+  };
 }
 
 /* ─── §5 Shared components ───────────────────────────────────── */
 const C = {
   badge: (status) => `<span class="badge badge--${status}">${status}</span>`,
-
   avatar: (name, opts = {}) => {
     const cls = opts.banned ? 'avatar avatar--banned' : (opts.large ? 'avatar avatar--lg' : 'avatar');
     return `<div class="${cls}">${U.initials(name)}</div>`;
   },
-
-  empty: (icon, title, sub) => `
+  empty: (icon, title, sub, cta) => `
     <div class="empty">
       <span class="empty__icon">${icon}</span>
       <div class="empty__title">${U.esc(title)}</div>
       <div class="small">${U.esc(sub || '')}</div>
+      ${cta ? `<div class="empty__cta">${cta}</div>` : ''}
     </div>`,
-
   paymentBadges: (b) => {
     const mode = b.paymentMode === 'online'
       ? `<span class="badge badge--online">💳 Online</span>`
       : `<span class="badge badge--offline">💵 Cash / offline</span>`;
-    const stat = `<span class="badge badge--${b.paymentStatus}">${b.paymentStatus}</span>`;
-    return `<div class="booking-tags">${mode}${stat}</div>`;
+    return `<div class="booking-tags">${mode}<span class="badge badge--${b.paymentStatus}">${b.paymentStatus}</span></div>`;
   },
-
   bookingCard: (b, opts = {}) => {
     const astro = Store.getAstro(b.astrologerId);
     const user = Store.getUser(b.userId);
     const who = opts.showUser ? (user && user.name) : (astro && astro.name);
-    const href = opts.href || null;
-    const wrap = href
-      ? `<a class="card booking-card" href="${href}">`
-      : `<div class="card booking-card">`;
+    const href = opts.href;
+    const wrap = href ? `<a class="card booking-card" href="${href}">` : `<div class="card booking-card">`;
     const close = href ? '</a>' : '</div>';
     return `${wrap}
       <div class="booking-row">
@@ -453,7 +634,6 @@ const C = {
       ${b.refundAmount ? `<div class="muted tiny">Refunded ${U.money(b.refundAmount)}${b.refundReason ? ' · ' + U.esc(b.refundReason) : ''}</div>` : ''}
     ${close}`;
   },
-
   astroCardPublic: (a) => `
     <a class="card astro-card" href="#/astrologer/${a.id}">
       ${C.avatar(a.name)}
@@ -467,7 +647,6 @@ const C = {
         <div class="muted tiny">/session</div>
       </div>
     </a>`,
-
   timelineItem: (icon, cls, title, time) => `
     <div class="timeline-item">
       <div class="timeline-icon ${cls ? 'timeline-icon--' + cls : ''}">${icon}</div>
@@ -480,7 +659,7 @@ const C = {
 
 /* ─── §6 Screens ─────────────────────────────────────────────── */
 
-/* ── USER screens ── */
+/* ── USER ── */
 
 function screenUserLanding() {
   return {
@@ -515,62 +694,164 @@ function screenUserLanding() {
         </a>
       </div>
       <div class="note">
-        <strong>Day 3 preview.</strong> Payment gateway (Razorpay) unlocks on Day 15.
-        Full booking flow unlocks on Day 14.
+        <strong>Day 4 preview.</strong> Payment gateway (Razorpay) unlocks on Day 15.
+        Booking flow unlocks on Day 14.
       </div>
-      <button class="btn btn--ghost" id="resetBtn">Reset demo data</button>
+      <div class="center">
+        <span class="version-badge">${CONFIG.buildLabel}</span>
+      </div>
+      <div class="action-row" style="margin-top:16px">
+        <button class="btn btn--ghost" id="resetBtn">Reset demo data</button>
+      </div>
     `,
     mount() {
       document.querySelectorAll('[data-goto]').forEach(el => {
         el.addEventListener('click', () => { location.hash = el.dataset.goto; });
       });
       const r = document.getElementById('resetBtn');
-      if (r) r.addEventListener('click', () => {
+      if (r) r.onclick = () => {
         confirmDialog({
           title: 'Reset demo data?',
           message: 'This clears all local data and restores the seed. All your changes will be lost.',
-          confirmText: 'Reset',
-          danger: true,
-          onConfirm: () => {
-            Store.reset();
-            closeModal();
-            render();
-            toast('Demo data reset');
+          confirmText: 'Reset', danger: true,
+          onConfirm: (btn) => {
+            setLoading(btn, true);
+            setTimeout(() => { Store.reset(); closeModal(); render(); toast('Demo data reset', 'success'); }, 200);
           },
         });
-      });
+      };
     },
   };
 }
 
+function filterAstrologers(list, f) {
+  let r = list.filter(a => a.status === 'approved');
+  const q = (f.q || '').trim().toLowerCase();
+  if (q) r = r.filter(a =>
+    a.name.toLowerCase().includes(q) ||
+    a.specialty.toLowerCase().includes(q) ||
+    a.city.toLowerCase().includes(q)
+  );
+  if (f.specialty !== 'all') r = r.filter(a => a.specialty === f.specialty);
+  if (f.priceBand !== 'all') {
+    const [min, max] = f.priceBand.split('-').map(Number);
+    r = r.filter(a => a.fee >= min && (max ? a.fee < max : true));
+  }
+  if (f.sort === 'rating') r.sort((a, b) => b.rating - a.rating);
+  else if (f.sort === 'price-asc') r.sort((a, b) => a.fee - b.fee);
+  else if (f.sort === 'price-desc') r.sort((a, b) => b.fee - a.fee);
+  return r;
+}
+
 function screenUserHome() {
-  const approved = Store.listAstros('approved');
+  const all = Store.listAstros('approved');
+  const specialties = [...new Set(all.map(a => a.specialty))].sort();
+  const filtered = filterAstrologers(all, state);
+  const priceBands = [
+    { k: 'all', label: 'Any price' },
+    { k: '0-500', label: 'Under ₹500' },
+    { k: '500-1000', label: '₹500–₹1000' },
+    { k: '1000-99999', label: '₹1000+' },
+  ];
+  const sorts = [
+    { k: 'rating', label: '⭐ Top rated' },
+    { k: 'price-asc', label: '↑ Price: low' },
+    { k: 'price-desc', label: '↓ Price: high' },
+  ];
   return {
     title: 'Find astrologer',
     html: `
       <div class="page-head">
         <h2>Find an astrologer</h2>
-        <p>${approved.length} verified experts</p>
+        <p>${filtered.length} of ${all.length} verified experts</p>
       </div>
-      ${approved.length === 0
-        ? C.empty('🔮', 'No astrologers yet', 'Check back soon')
-        : `<div class="list">${approved.map(C.astroCardPublic).join('')}</div>`}
+      <div class="search-bar">
+        <input type="search" class="field__input" id="astroSearch"
+          placeholder="Search by name, specialty or city"
+          value="${U.esc(state.userQuery)}" />
+        <button class="search-clear ${state.userQuery ? 'show' : ''}" id="searchClear" aria-label="Clear search">✕</button>
+      </div>
+      <div class="chip-row" id="specialtyChips">
+        <button class="chip ${state.userSpecialty === 'all' ? 'active' : ''}" data-sp="all">All</button>
+        ${specialties.map(sp => `<button class="chip ${state.userSpecialty === sp ? 'active' : ''}" data-sp="${U.esc(sp)}">${U.esc(sp)}</button>`).join('')}
+      </div>
+      <div class="chip-row">
+        ${priceBands.map(p => `<button class="chip ${state.userPriceBand === p.k ? 'active' : ''}" data-band="${p.k}">${p.label}</button>`).join('')}
+      </div>
+      <div class="chip-row">
+        ${sorts.map(s => `<button class="chip ${state.userSort === s.k ? 'active' : ''}" data-sort="${s.k}">${s.label}</button>`).join('')}
+      </div>
+      <div id="astroList">
+        ${filtered.length === 0
+          ? C.empty('🔮', 'No matching astrologers', 'Try clearing some filters.',
+              `<button class="btn btn--ghost" id="clearFilters">Clear filters</button>`)
+          : `<div class="list">${filtered.map(C.astroCardPublic).join('')}</div>`}
+      </div>
     `,
+    mount() {
+      const input = document.getElementById('astroSearch');
+      const clear = document.getElementById('searchClear');
+      const list = document.getElementById('astroList');
+
+      const rerenderList = () => {
+        const f = filterAstrologers(all, state);
+        list.innerHTML = f.length === 0
+          ? C.empty('🔮', 'No matching astrologers', 'Try clearing some filters.',
+              `<button class="btn btn--ghost" id="clearFilters">Clear filters</button>`)
+          : `<div class="list">${f.map(C.astroCardPublic).join('')}</div>`;
+        const cf = document.getElementById('clearFilters');
+        if (cf) cf.onclick = () => {
+          state.userQuery = ''; state.userSpecialty = 'all';
+          state.userPriceBand = 'all'; state.userSort = 'rating';
+          render();
+        };
+      };
+
+      input.addEventListener('input', U.debounce(() => {
+        state.userQuery = input.value;
+        clear.classList.toggle('show', !!input.value);
+        rerenderList();
+      }, 150));
+      clear.onclick = () => { state.userQuery = ''; input.value = ''; clear.classList.remove('show'); rerenderList(); input.focus(); };
+
+      document.querySelectorAll('[data-sp]').forEach(b => b.onclick = () => {
+        state.userSpecialty = b.dataset.sp;
+        document.querySelectorAll('[data-sp]').forEach(x => x.classList.toggle('active', x === b));
+        rerenderList();
+      });
+      document.querySelectorAll('[data-band]').forEach(b => b.onclick = () => {
+        state.userPriceBand = b.dataset.band;
+        document.querySelectorAll('[data-band]').forEach(x => x.classList.toggle('active', x === b));
+        rerenderList();
+      });
+      document.querySelectorAll('[data-sort]').forEach(b => b.onclick = () => {
+        state.userSort = b.dataset.sort;
+        document.querySelectorAll('[data-sort]').forEach(x => x.classList.toggle('active', x === b));
+        rerenderList();
+      });
+
+      // re-bind clear button in initial empty state
+      const cf = document.getElementById('clearFilters');
+      if (cf) cf.onclick = () => {
+        state.userQuery = ''; state.userSpecialty = 'all';
+        state.userPriceBand = 'all'; state.userSort = 'rating';
+        render();
+      };
+    },
   };
 }
 
 function screenUserAstrologer(params) {
   const a = Store.getAstro(params.id);
   if (!a || a.status !== 'approved') {
-    return {
-      title: 'Not found',
-      html: C.empty('🔮', 'Astrologer not found', 'They may have been removed.'),
-    };
+    return { title: 'Not found', html: C.empty('🔮', 'Astrologer not found', 'They may have been removed.') };
   }
   const bookedSlotIds = new Set(
     Store.listBookings().filter(b => b.status !== 'cancelled').map(b => b.slotId)
   );
-  const slots = Store.listSlots(a.id).filter(s => !bookedSlotIds.has(s.id));
+  const slots = Store.listSlots(a.id)
+    .filter(s => !bookedSlotIds.has(s.id) && s.date >= U.todayIso())
+    .sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
   return {
     title: a.name,
     html: `
@@ -604,7 +885,7 @@ function screenUserAstrologer(params) {
     `,
     mount() {
       document.querySelectorAll('[data-slot]').forEach(b =>
-        b.addEventListener('click', () => toast('Booking flow unlocks on Day 14')));
+        b.onclick = () => toast('Booking flow unlocks on Day 14', 'info'));
     },
   };
 }
@@ -616,7 +897,8 @@ function screenUserBookings() {
     html: `
       <div class="page-head"><h2>My bookings</h2></div>
       ${bookings.length === 0
-        ? C.empty('📅', 'No bookings yet', 'Browse astrologers to book a session.')
+        ? C.empty('📅', 'No bookings yet', 'Browse astrologers to book a session.',
+            `<a class="btn" href="#/home">Browse astrologers</a>`)
         : `<div class="list">${bookings.map(b => C.bookingCard(b)).join('')}</div>`}
     `,
   };
@@ -646,7 +928,7 @@ function screenUserProfile() {
   };
 }
 
-/* ── ASTROLOGER screens ── */
+/* ── ASTROLOGER ── */
 
 function screenAstroDashboard() {
   const a = Store.getAstro(CURRENT.astroId);
@@ -680,30 +962,114 @@ function screenAstroDashboard() {
 
 function screenAstroSlots() {
   const a = Store.getAstro(CURRENT.astroId);
-  const slots = Store.listSlots(a.id);
+  const allSlots = Store.listSlots(a.id);
   const bookedIds = new Set(Store.listBookings().filter(b => b.status !== 'cancelled').map(b => b.slotId));
+  const upcoming = allSlots
+    .filter(s => s.date >= U.todayIso())
+    .sort((x, y) => (x.date + x.time).localeCompare(y.date + y.time));
+  const past = allSlots
+    .filter(s => s.date < U.todayIso())
+    .sort((x, y) => (y.date + y.time).localeCompare(x.date + x.time));
+  const canCreate = a.status === 'approved';
+
+  const renderRow = (s) => {
+    const booked = bookedIds.has(s.id);
+    const isPast = U.isPastDate(s.date);
+    return `
+      <div class="card booking-card" data-slot-row="${s.id}">
+        <div class="booking-row">
+          <div>
+            <div class="row-title">${U.fmtDate(s.date)}</div>
+            <div class="muted small">${s.time} · ${s.duration} min · ${U.money(s.price)}</div>
+          </div>
+          ${booked ? C.badge('confirmed') : isPast ? C.badge('completed') : C.badge('approved')}
+        </div>
+        <div class="booking-row" style="justify-content:flex-end">
+          ${!booked && !isPast ? `
+            <button class="btn btn--ghost btn--sm" data-action="edit" data-id="${s.id}">Edit</button>
+            <button class="btn btn--danger-ghost btn--sm" data-action="delete" data-id="${s.id}">Delete</button>
+          ` : `
+            <span class="muted tiny">${booked ? 'Booked — locked' : 'Past slot'}</span>
+          `}
+        </div>
+      </div>`;
+  };
+
   return {
     title: 'Slots',
     html: `
       <div class="page-head with-action">
         <h2>My slots</h2>
-        <button class="btn btn--sm" id="addSlotBtn">+ Add slot</button>
+        <button class="btn btn--sm" id="addSlotBtn" ${canCreate ? '' : 'disabled title="Profile must be approved"'}>+ Add slot</button>
       </div>
-      ${slots.length === 0
-        ? C.empty('🕐', 'No slots yet', 'Create slots so users can book sessions.')
-        : `<div class="list">${slots.map(s => `
-            <div class="card slot-row booking-row">
-              <div>
-                <div class="row-title">${U.fmtDate(s.date)}</div>
-                <div class="muted small">${s.time} · ${s.duration} min · ${U.money(s.price)}</div>
-              </div>
-              ${bookedIds.has(s.id) ? C.badge('confirmed') : C.badge('approved')}
-            </div>`).join('')}</div>`}
-      <div class="note">Slot creation unlocks on Day 5.</div>
+      ${!canCreate ? `<div class="note">Your profile must be approved before you can create slots.</div>` : ''}
+      <div class="tabs">
+        <button class="tab active" data-stab="upcoming">Upcoming <span class="tab-count">${upcoming.length}</span></button>
+        <button class="tab" data-stab="past">Past <span class="tab-count">${past.length}</span></button>
+      </div>
+      <div id="slotList">
+        ${upcoming.length === 0
+          ? C.empty('🕐', 'No upcoming slots', 'Create slots so users can book sessions.',
+              canCreate ? `<button class="btn" id="emptyAddBtn">+ Add slot</button>` : '')
+          : `<div class="list">${upcoming.map(renderRow).join('')}</div>`}
+      </div>
     `,
     mount() {
-      const btn = document.getElementById('addSlotBtn');
-      if (btn) btn.addEventListener('click', () => toast('Slot creation unlocks on Day 5'));
+      const bindRowActions = () => {
+        document.querySelectorAll('[data-slot-row] [data-action]').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const id = btn.dataset.id;
+            const action = btn.dataset.action;
+            const slot = Store.getSlot(id);
+            if (action === 'edit') {
+              slotFormModal({
+                mode: 'edit', astroId: a.id, slot,
+                onSave: (patch) => Actions.updateSlot(id, patch),
+              });
+            } else if (action === 'delete') {
+              confirmDialog({
+                title: 'Delete this slot?',
+                message: `${U.fmtDate(slot.date)} · ${slot.time} will be removed. Users won't be able to book it.`,
+                confirmText: 'Delete', danger: true,
+                onConfirm: (b) => exec(() => Actions.deleteSlot(id), b),
+              });
+            }
+          };
+        });
+      };
+
+      const bindAdd = (btn) => {
+        if (!btn) return;
+        btn.onclick = () => slotFormModal({
+          mode: 'create', astroId: a.id,
+          onSave: (data) => Actions.createSlot(a.id, data),
+        });
+      };
+      bindAdd(document.getElementById('addSlotBtn'));
+      bindAdd(document.getElementById('emptyAddBtn'));
+
+      // tab switching (local to slots screen, not shared)
+      const renderTab = (tab) => {
+        const list = document.getElementById('slotList');
+        if (tab === 'upcoming') {
+          list.innerHTML = upcoming.length === 0
+            ? C.empty('🕐', 'No upcoming slots', 'Create slots so users can book sessions.',
+                canCreate ? `<button class="btn" id="emptyAddBtn">+ Add slot</button>` : '')
+            : `<div class="list">${upcoming.map(renderRow).join('')}</div>`;
+          bindAdd(document.getElementById('emptyAddBtn'));
+        } else {
+          list.innerHTML = past.length === 0
+            ? C.empty('🗓', 'No past slots', 'Completed slots will show here.')
+            : `<div class="list">${past.map(renderRow).join('')}</div>`;
+        }
+        bindRowActions();
+      };
+      bindRowActions();
+      document.querySelectorAll('[data-stab]').forEach(t => t.onclick = () => {
+        document.querySelectorAll('[data-stab]').forEach(x => x.classList.toggle('active', x === t));
+        renderTab(t.dataset.stab);
+      });
     },
   };
 }
@@ -748,7 +1114,7 @@ function screenAstroProfile() {
   };
 }
 
-/* ── ADMIN screens ── */
+/* ── ADMIN ── */
 
 function screenAdminDashboard() {
   const d = Store.load();
@@ -760,9 +1126,12 @@ function screenAdminDashboard() {
   return {
     title: 'Admin',
     html: `
-      <div class="page-head">
-        <h2>Admin overview</h2>
-        <p>Signed in as ${U.esc(CURRENT.adminName)}</p>
+      <div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div>
+          <h2>Admin overview</h2>
+          <p>Signed in as ${U.esc(CURRENT.adminName)}</p>
+        </div>
+        <span class="version-badge">${CONFIG.buildLabel}</span>
       </div>
       <div class="stat-grid">
         <div class="stat"><div class="stat-val">${pending}</div><div class="stat-lbl">Pending approvals</div></div>
@@ -818,7 +1187,7 @@ function screenAdminAstrologers() {
     `,
     mount() {
       document.querySelectorAll('[data-tab]').forEach(b =>
-        b.addEventListener('click', () => { state.adminAstroTab = b.dataset.tab; render(); }));
+        b.onclick = () => { state.adminAstroTab = b.dataset.tab; render(); });
     },
   };
 }
@@ -839,7 +1208,6 @@ function screenAdminAstrologerDetail(params) {
           <p style="margin-top:6px">${C.badge(a.status)}</p>
         </div>
       </div>
-
       <div class="section-card">
         <div class="section-card__title">Profile</div>
         <p class="body-text">${U.esc(a.bio)}</p>
@@ -850,7 +1218,6 @@ function screenAdminAstrologerDetail(params) {
           <div class="kv__row"><span class="kv__label">Rating</span><span class="kv__value">⭐ ${a.rating.toFixed(1)} · ${a.reviews} reviews</span></div>
         </div>
       </div>
-
       <div class="section-card">
         <div class="section-card__title">KYC</div>
         <div class="kv">
@@ -859,7 +1226,6 @@ function screenAdminAstrologerDetail(params) {
           <div class="kv__row"><span class="kv__label">Verified</span><span class="kv__value">${a.kyc.verified ? '✅ Yes' : C.badge('pending')}</span></div>
         </div>
       </div>
-
       <div class="section-card">
         <div class="section-card__title">Activity</div>
         <div class="kv">
@@ -870,7 +1236,6 @@ function screenAdminAstrologerDetail(params) {
         ${a.status === 'rejected' && a.statusReason ? `
           <p class="body-text" style="margin-top:12px"><strong>Rejection reason:</strong> ${U.esc(a.statusReason)}</p>` : ''}
       </div>
-
       ${canAct ? `
         <div class="action-row">
           <button class="btn btn--success" id="approveBtn">✓ Approve</button>
@@ -883,13 +1248,12 @@ function screenAdminAstrologerDetail(params) {
     mount() {
       const approve = document.getElementById('approveBtn');
       const reject = document.getElementById('rejectBtn');
-
       if (approve) approve.onclick = () => {
         confirmDialog({
           title: `Approve ${a.name}?`,
           message: 'They will become visible to users and can receive bookings.',
           confirmText: 'Approve',
-          onConfirm: () => exec(() => Actions.approveAstrologer(a.id)),
+          onConfirm: (btn) => exec(() => Actions.approveAstrologer(a.id), btn),
         });
       };
       if (reject) reject.onclick = () => {
@@ -897,9 +1261,8 @@ function screenAdminAstrologerDetail(params) {
           title: `Reject ${a.name}`,
           message: 'The astrologer will see this reason. Be specific so they can fix it.',
           placeholder: 'e.g. PAN document unclear, please re-submit',
-          confirmText: 'Reject',
-          danger: true,
-          onConfirm: (reason) => exec(() => Actions.rejectAstrologer(a.id, reason)),
+          confirmText: 'Reject', danger: true,
+          onConfirm: (reason, btn) => exec(() => Actions.rejectAstrologer(a.id, reason), btn),
         });
       };
     },
@@ -907,27 +1270,44 @@ function screenAdminAstrologerDetail(params) {
 }
 
 function screenAdminBookings() {
-  const q = state.adminBookingQuery.toLowerCase();
-  let rows = Store.listBookings();
-  if (state.adminBookingFilter !== 'all') rows = rows.filter(b => b.status === state.adminBookingFilter);
-  if (q) {
-    rows = rows.filter(b => {
+  const renderRows = () => {
+    const q = state.adminBookingQuery.toLowerCase();
+    let r = Store.listBookings();
+    if (state.adminBookingFilter !== 'all') r = r.filter(b => b.status === state.adminBookingFilter);
+    if (q) r = r.filter(b => {
       const astro = Store.getAstro(b.astrologerId);
       const user = Store.getUser(b.userId);
-      return (
-        (user && user.name.toLowerCase().includes(q)) ||
-        (astro && astro.name.toLowerCase().includes(q)) ||
-        b.id.toLowerCase().includes(q)
-      );
+      return (user && user.name.toLowerCase().includes(q)) ||
+             (astro && astro.name.toLowerCase().includes(q)) ||
+             b.id.toLowerCase().includes(q);
     });
-  }
-  rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
+    r.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (r.length === 0) return C.empty('📋', 'No bookings', 'Try a different filter or search.');
+    return `<div class="list">${r.map(b => {
+      const user = Store.getUser(b.userId);
+      const astro = Store.getAstro(b.astrologerId);
+      return `
+        <a class="card booking-card" href="#/bookings/${b.id}">
+          <div class="booking-row">
+            <div>
+              <div class="row-title">${U.esc(astro ? astro.name : '—')}</div>
+              <div class="row-sub">Booked by ${U.esc(user ? user.name : '—')}</div>
+            </div>
+            ${C.badge(b.status)}
+          </div>
+          <div class="muted small">${U.fmtDate(b.date)} · ${b.time}</div>
+          ${C.paymentBadges(b)}
+          <div class="booking-row muted small">
+            <span>#${b.id.toUpperCase()}</span>
+            <span>${U.money(b.amount)}</span>
+          </div>
+        </a>`;
+    }).join('')}</div>`;
+  };
   const tabs = ['all','pending','confirmed','completed','cancelled'].map(k => `
     <button class="tab ${state.adminBookingFilter === k ? 'active' : ''}" data-tab="${k}">
       ${k[0].toUpperCase() + k.slice(1)}
     </button>`).join('');
-
   return {
     title: 'Bookings',
     html: `
@@ -936,77 +1316,26 @@ function screenAdminBookings() {
         <input type="search" class="field__input" id="bookingsSearch"
           placeholder="Search by user, astrologer or #ID"
           value="${U.esc(state.adminBookingQuery)}" />
+        <button class="search-clear ${state.adminBookingQuery ? 'show' : ''}" id="searchClear" aria-label="Clear">✕</button>
       </div>
       <div class="tabs">${tabs}</div>
-      <div id="bookingsList">
-        ${rows.length === 0
-          ? C.empty('📋', 'No bookings', 'Try a different filter or search.')
-          : `<div class="list">${rows.map(b => {
-              const user = Store.getUser(b.userId);
-              const astro = Store.getAstro(b.astrologerId);
-              return `
-                <a class="card booking-card" href="#/bookings/${b.id}">
-                  <div class="booking-row">
-                    <div>
-                      <div class="row-title">${U.esc(astro ? astro.name : '—')}</div>
-                      <div class="row-sub">Booked by ${U.esc(user ? user.name : '—')}</div>
-                    </div>
-                    ${C.badge(b.status)}
-                  </div>
-                  <div class="muted small">${U.fmtDate(b.date)} · ${b.time}</div>
-                  ${C.paymentBadges(b)}
-                  <div class="booking-row muted small">
-                    <span>#${b.id.toUpperCase()}</span>
-                    <span>${U.money(b.amount)}</span>
-                  </div>
-                </a>`;
-            }).join('')}</div>`}
-      </div>
+      <div id="bookingsList">${renderRows()}</div>
     `,
     mount() {
       const input = document.getElementById('bookingsSearch');
+      const clear = document.getElementById('searchClear');
       const list = document.getElementById('bookingsList');
-      const rerender = () => {
-        const q2 = state.adminBookingQuery.toLowerCase();
-        let r = Store.listBookings();
-        if (state.adminBookingFilter !== 'all') r = r.filter(b => b.status === state.adminBookingFilter);
-        if (q2) r = r.filter(b => {
-          const astro = Store.getAstro(b.astrologerId);
-          const user = Store.getUser(b.userId);
-          return (user && user.name.toLowerCase().includes(q2)) ||
-                 (astro && astro.name.toLowerCase().includes(q2)) ||
-                 b.id.toLowerCase().includes(q2);
-        });
-        r.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        list.innerHTML = r.length === 0
-          ? C.empty('📋', 'No bookings', 'Try a different filter or search.')
-          : `<div class="list">${r.map(b => {
-              const user = Store.getUser(b.userId);
-              const astro = Store.getAstro(b.astrologerId);
-              return `
-                <a class="card booking-card" href="#/bookings/${b.id}">
-                  <div class="booking-row">
-                    <div>
-                      <div class="row-title">${U.esc(astro ? astro.name : '—')}</div>
-                      <div class="row-sub">Booked by ${U.esc(user ? user.name : '—')}</div>
-                    </div>
-                    ${C.badge(b.status)}
-                  </div>
-                  <div class="muted small">${U.fmtDate(b.date)} · ${b.time}</div>
-                  ${C.paymentBadges(b)}
-                  <div class="booking-row muted small">
-                    <span>#${b.id.toUpperCase()}</span>
-                    <span>${U.money(b.amount)}</span>
-                  </div>
-                </a>`;
-            }).join('')}</div>`;
-      };
       input.addEventListener('input', U.debounce(() => {
         state.adminBookingQuery = input.value;
-        rerender();
+        clear.classList.toggle('show', !!input.value);
+        list.innerHTML = renderRows();
       }, 150));
+      clear.onclick = () => {
+        state.adminBookingQuery = ''; input.value = '';
+        clear.classList.remove('show'); list.innerHTML = renderRows(); input.focus();
+      };
       document.querySelectorAll('[data-tab]').forEach(b =>
-        b.addEventListener('click', () => { state.adminBookingFilter = b.dataset.tab; render(); }));
+        b.onclick = () => { state.adminBookingFilter = b.dataset.tab; render(); });
     },
   };
 }
@@ -1017,11 +1346,8 @@ function screenAdminBookingDetail(params) {
   const astro = Store.getAstro(b.astrologerId);
   const user = Store.getUser(b.userId);
   const events = Store.listBookingAudit(b.id);
-
-  // actions
   const canCancel = b.status === 'pending' || b.status === 'confirmed';
   const canMarkPaid = b.paymentStatus === 'unpaid' && b.status !== 'cancelled';
-
   return {
     title: `Booking #${b.id.toUpperCase()}`,
     html: `
@@ -1099,10 +1425,9 @@ function screenAdminBookingDetail(params) {
     mount() {
       const cancelBtn = document.getElementById('cancelBtn');
       const markPaidBtn = document.getElementById('markPaidBtn');
-
       if (cancelBtn) cancelBtn.onclick = () => {
         const msg = b.paymentStatus === 'paid'
-          ? `This booking will be cancelled and ${U.money(b.amount)} will be refunded to the user.`
+          ? `This booking will be cancelled and ${U.money(b.amount)} will be refunded.`
           : 'This booking will be cancelled.';
         reasonDialog({
           title: `Cancel booking #${b.id.toUpperCase()}?`,
@@ -1110,16 +1435,15 @@ function screenAdminBookingDetail(params) {
           placeholder: 'e.g. Astrologer unavailable, technical issue',
           confirmText: b.paymentStatus === 'paid' ? 'Cancel & refund' : 'Cancel booking',
           danger: true,
-          onConfirm: (reason) => exec(() => Actions.cancelBooking(b.id, reason)),
+          onConfirm: (reason, btn) => exec(() => Actions.cancelBooking(b.id, reason), btn),
         });
       };
-
       if (markPaidBtn) markPaidBtn.onclick = () => {
         confirmDialog({
           title: 'Mark as paid?',
-          message: `Confirm that the user has paid ${U.money(b.amount)} in cash for this session.`,
+          message: `Confirm the user has paid ${U.money(b.amount)} in cash for this session.`,
           confirmText: 'Mark paid',
-          onConfirm: () => exec(() => Actions.markBookingPaid(b.id, '')),
+          onConfirm: (btn) => exec(() => Actions.markBookingPaid(b.id, ''), btn),
         });
       };
     },
@@ -1127,24 +1451,12 @@ function screenAdminBookingDetail(params) {
 }
 
 function screenAdminUsers() {
-  const q = state.adminUserQuery.toLowerCase();
-  let users = Store.listUsers();
-  if (state.adminUserFilter === 'banned') users = users.filter(u => u.banned);
-  if (state.adminUserFilter === 'active') users = users.filter(u => !u.banned);
-  if (q) users = users.filter(u =>
-    u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
-
-  const tabs = ['all','active','banned'].map(k => `
-    <button class="tab ${state.adminUserFilter === k ? 'active' : ''}" data-tab="${k}">
-      ${k[0].toUpperCase() + k.slice(1)}
-    </button>`).join('');
-
   const renderRows = () => {
-    const qq = state.adminUserQuery.toLowerCase();
+    const q = state.adminUserQuery.toLowerCase();
     let r = Store.listUsers();
     if (state.adminUserFilter === 'banned') r = r.filter(u => u.banned);
     if (state.adminUserFilter === 'active') r = r.filter(u => !u.banned);
-    if (qq) r = r.filter(u => u.name.toLowerCase().includes(qq) || u.email.toLowerCase().includes(qq));
+    if (q) r = r.filter(u => u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q));
     if (r.length === 0) return C.empty('👥', 'No users', 'Try a different filter or search.');
     return `<div class="list">${r.map(u => {
       const bc = Store.listBookings().filter(b => b.userId === u.id).length;
@@ -1159,7 +1471,10 @@ function screenAdminUsers() {
         </a>`;
     }).join('')}</div>`;
   };
-
+  const tabs = ['all','active','banned'].map(k => `
+    <button class="tab ${state.adminUserFilter === k ? 'active' : ''}" data-tab="${k}">
+      ${k[0].toUpperCase() + k.slice(1)}
+    </button>`).join('');
   return {
     title: 'Users',
     html: `
@@ -1168,19 +1483,26 @@ function screenAdminUsers() {
         <input type="search" class="field__input" id="usersSearch"
           placeholder="Search by name or email"
           value="${U.esc(state.adminUserQuery)}" />
+        <button class="search-clear ${state.adminUserQuery ? 'show' : ''}" id="searchClear" aria-label="Clear">✕</button>
       </div>
       <div class="tabs">${tabs}</div>
       <div id="usersList">${renderRows()}</div>
     `,
     mount() {
       const input = document.getElementById('usersSearch');
+      const clear = document.getElementById('searchClear');
       const list = document.getElementById('usersList');
       input.addEventListener('input', U.debounce(() => {
         state.adminUserQuery = input.value;
+        clear.classList.toggle('show', !!input.value);
         list.innerHTML = renderRows();
       }, 150));
+      clear.onclick = () => {
+        state.adminUserQuery = ''; input.value = '';
+        clear.classList.remove('show'); list.innerHTML = renderRows(); input.focus();
+      };
       document.querySelectorAll('[data-tab]').forEach(b =>
-        b.addEventListener('click', () => { state.adminUserFilter = b.dataset.tab; render(); }));
+        b.onclick = () => { state.adminUserFilter = b.dataset.tab; render(); });
     },
   };
 }
@@ -1194,7 +1516,6 @@ function screenAdminUserDetail(params) {
   const spent = bookings.filter(b => b.paymentStatus === 'paid').reduce((s, b) => s + b.amount, 0);
   const cancelled = bookings.filter(b => b.status === 'cancelled').length;
   const refunded = bookings.filter(b => b.paymentStatus === 'refunded').reduce((s, b) => s + (b.refundAmount || 0), 0);
-
   return {
     title: u.name,
     html: `
@@ -1206,14 +1527,12 @@ function screenAdminUserDetail(params) {
           <p class="muted">${U.esc(u.phone)}</p>
         </div>
       </div>
-
       <div class="stat-grid">
         <div class="stat"><div class="stat-val">${bookings.length}</div><div class="stat-lbl">Bookings</div></div>
         <div class="stat"><div class="stat-val">${U.money(spent)}</div><div class="stat-lbl">Total spent</div></div>
         <div class="stat"><div class="stat-val">${cancelled}</div><div class="stat-lbl">Cancellations</div></div>
         <div class="stat"><div class="stat-val">${U.money(refunded)}</div><div class="stat-lbl">Refunded</div></div>
       </div>
-
       <div class="section-card">
         <div class="section-card__title">Account</div>
         <div class="kv">
@@ -1223,7 +1542,6 @@ function screenAdminUserDetail(params) {
         </div>
         ${u.banned && u.bannedReason ? `<p class="body-text" style="margin-top:12px"><strong>Ban reason:</strong> ${U.esc(u.bannedReason)}</p>` : ''}
       </div>
-
       <div class="section-card">
         <div class="section-card__title">Booking history</div>
         ${bookings.length === 0
@@ -1244,7 +1562,6 @@ function screenAdminUserDetail(params) {
                 </a>`;
             }).join('')}</div>`}
       </div>
-
       <div class="action-row">
         ${u.banned
           ? `<button class="btn btn--success" id="unbanBtn">🔓 Unban user</button>`
@@ -1254,15 +1571,13 @@ function screenAdminUserDetail(params) {
     mount() {
       const banBtn = document.getElementById('banBtn');
       const unbanBtn = document.getElementById('unbanBtn');
-
       if (banBtn) banBtn.onclick = () => {
         reasonDialog({
           title: `Ban ${u.name}?`,
-          message: 'A banned user cannot make new bookings. They will see the ban status in their app.',
+          message: 'A banned user cannot make new bookings.',
           placeholder: 'e.g. Repeated no-shows, abusive behaviour',
-          confirmText: 'Ban user',
-          danger: true,
-          onConfirm: (reason) => exec(() => Actions.banUser(u.id, reason)),
+          confirmText: 'Ban user', danger: true,
+          onConfirm: (reason, btn) => exec(() => Actions.banUser(u.id, reason), btn),
         });
       };
       if (unbanBtn) unbanBtn.onclick = () => {
@@ -1270,7 +1585,7 @@ function screenAdminUserDetail(params) {
           title: `Unban ${u.name}?`,
           message: 'They will be able to book sessions again.',
           confirmText: 'Unban',
-          onConfirm: () => exec(() => Actions.unbanUser(u.id)),
+          onConfirm: (btn) => exec(() => Actions.unbanUser(u.id), btn),
         });
       };
     },
@@ -1282,9 +1597,9 @@ function screenAdminAudit() {
   return {
     title: 'Audit log',
     html: `
-      <div class="page-head"><h2>Audit log</h2><p>Every admin action is recorded</p></div>
+      <div class="page-head"><h2>Audit log</h2><p>Every admin & astrologer action is recorded</p></div>
       ${logs.length === 0
-        ? C.empty('📜', 'No actions yet', 'Admin actions will appear here.')
+        ? C.empty('📜', 'No actions yet', 'Actions will appear here.')
         : `<div class="list">${logs.map(l => {
             const meta = AUDIT_META[l.action] || { icon: '•', cls: '', label: l.action };
             const name = (l.meta && l.meta.name) || l.targetId;
@@ -1314,18 +1629,15 @@ const SCREENS = {
   default: APP === 'admin' ? screenAdminDashboard
         : APP === 'astro' ? screenAstroDashboard
         : screenUserLanding,
-  // user
   userLanding: screenUserLanding,
   userHome: screenUserHome,
   userAstrologer: screenUserAstrologer,
   userBookings: screenUserBookings,
   userProfile: screenUserProfile,
-  // astro
   astroDashboard: screenAstroDashboard,
   astroSlots: screenAstroSlots,
   astroBookings: screenAstroBookings,
   astroProfile: screenAstroProfile,
-  // admin
   adminDashboard: screenAdminDashboard,
   adminAstrologers: screenAdminAstrologers,
   adminAstrologerDetail: screenAdminAstrologerDetail,
@@ -1340,10 +1652,10 @@ const SCREENS = {
 /* ─── §7 Routes ──────────────────────────────────────────────── */
 const ROUTES = {
   user: {
-    '/home':            'userHome',
-    '/astrologer/:id':  'userAstrologer',
-    '/bookings':        'userBookings',
-    '/profile':         'userProfile',
+    '/home':           'userHome',
+    '/astrologer/:id': 'userAstrologer',
+    '/bookings':       'userBookings',
+    '/profile':        'userProfile',
   },
   astro: {
     '/dashboard': 'astroDashboard',
@@ -1420,7 +1732,6 @@ function render() {
   const { screen, params } = matchRoute(path);
   const fn = SCREENS[screen] || SCREENS.notFound;
   const result = fn(params) || {};
-
   const view = document.getElementById('view');
   view.innerHTML = result.html || '';
   document.title = (result.title ? result.title + ' · ' : '') + CONFIG.appName;
@@ -1450,6 +1761,7 @@ function boot() {
   if ('serviceWorker' in navigator && APP === 'user') {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
+  console.log(`%c${CONFIG.appName} · ${CONFIG.buildLabel}`, 'color:#4338ca;font-weight:700');
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', boot);
