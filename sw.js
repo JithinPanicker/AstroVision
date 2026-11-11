@@ -1,5 +1,5 @@
-/* BookMyAstrologer — Service Worker (Day 4) */
-const CACHE = 'bma-v4';
+/* BookMyAstrologer — Service Worker (Day 5) */
+const CACHE = 'bma-v5';
 const ASSETS = [
   './', './index.html', './admin.html', './astro.html',
   './style.css', './app.js', './manifest.json', './icon.svg',
