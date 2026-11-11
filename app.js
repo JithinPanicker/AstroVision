@@ -1,5 +1,5 @@
 /* ================================================================
-   BookMyAstrologer — App (Day 5)
+   BookMyAstrologer — App (Day 5 - Fixed)
    Three apps in one codebase: User · Astrologer · Admin
    ================================================================ */
 
@@ -27,7 +27,6 @@ const AUDIT_META = {
   create_slot:        { icon: '➕', cls: 'success', label: 'Created slot' },
   update_slot:        { icon: '✏️', cls: 'info',    label: 'Updated slot' },
   delete_slot:        { icon: '🗑️', cls: 'danger',  label: 'Deleted slot' },
-  /* Day 5 */
   confirm_booking:    { icon: '✓', cls: 'success', label: 'Accepted booking' },
   decline_booking:    { icon: '✕', cls: 'danger',  label: 'Declined booking' },
   complete_booking:   { icon: '✅', cls: 'success', label: 'Completed session' },
@@ -206,28 +205,22 @@ const Store = {
     ];
 
     const bookings = [
-      /* confirmed, today, online-paid (Aarav → Rajesh) */
       { id:'b1', userId:'u1', astrologerId:'a1', slotId:'s1', date: day(0), time:'10:00',
         amount:500, status:'confirmed', paymentMode:'online', paymentStatus:'paid',
         paymentRef:'pay_RZP_A1B2C3', createdAt: daysAgo(2), paidAt: daysAgo(2), confirmedAt: daysAgo(2) },
-      /* pending, tomorrow, offline-unpaid (Aarav → Meera) */
       { id:'b2', userId:'u1', astrologerId:'a2', slotId:'s7', date: day(1), time:'14:00',
         amount:750, status:'pending', paymentMode:'offline', paymentStatus:'unpaid',
         paymentRef:null, createdAt: now },
-      /* completed, past, cash-paid (Priya → Rajesh) */
       { id:'b3', userId:'u2', astrologerId:'a1', slotId:'s0-old', date: day(-3), time:'11:00',
         amount:500, status:'completed', paymentMode:'offline', paymentStatus:'paid',
         paymentRef:'CASH-session-42', createdAt: daysAgo(4), paidAt: daysAgo(3), completedAt: daysAgo(3) },
-      /* cancelled+refunded (Vikram → Meera) */
       { id:'b4', userId:'u3', astrologerId:'a2', slotId:'s6', date: day(-1), time:'12:00',
         amount:750, status:'cancelled', paymentMode:'online', paymentStatus:'refunded',
         paymentRef:'pay_RZP_D4E5F6', refundAmount:750, refundReason:'Astrologer unavailable',
         createdAt: daysAgo(5), paidAt: daysAgo(5), refundedAt: daysAgo(4), cancelledAt: daysAgo(4) },
-      /* NEW — pending, tomorrow, online-paid (Vikram → Rajesh) — for testing accept/decline */
       { id:'b5', userId:'u3', astrologerId:'a1', slotId:'s3', date: day(1), time:'11:00',
         amount:500, status:'pending', paymentMode:'online', paymentStatus:'paid',
         paymentRef:'pay_RZP_X9Y8Z7', createdAt: now, paidAt: now },
-      /* NEW — confirmed, tomorrow, offline-unpaid (Priya → Meera) */
       { id:'b6', userId:'u2', astrologerId:'a2', slotId:'s7', date: day(1), time:'14:00',
         amount:750, status:'confirmed', paymentMode:'offline', paymentStatus:'unpaid',
         paymentRef:null, createdAt: daysAgo(1), confirmedAt: daysAgo(1) },
@@ -331,7 +324,6 @@ const Actions = {
     return { ok: true, message: 'Marked as paid' };
   },
 
-  /* ── Slot CRUD (astrologer) ── */
   createSlot(astroId, { date, time, duration, price }) {
     const a = Store.getAstro(astroId);
     if (!a) return { error: 'Astrologer not found' };
@@ -378,7 +370,6 @@ const Actions = {
     return { ok: true, message: 'Slot deleted' };
   },
 
-  /* ── Day 5: Booking lifecycle (astrologer side) ── */
   acceptBooking(id) {
     const b = Store.getBooking(id);
     if (!b) return { error: 'Booking not found' };
@@ -716,7 +707,6 @@ const C = {
     </div>`,
 };
 
-/* Shared binder — actions on astrologer booking cards */
 function bindAstroBookingActions(scope) {
   (scope || document).querySelectorAll('[data-accept]').forEach(b => {
     b.onclick = (e) => {
@@ -766,7 +756,6 @@ function bindAstroBookingActions(scope) {
   });
 }
 
-/* Shared binder — slot edit/delete */
 function bindSlotActions(scope, astroId) {
   (scope || document).querySelectorAll('[data-edit-slot]').forEach(b => {
     b.onclick = (e) => {
@@ -795,8 +784,6 @@ function bindSlotActions(scope, astroId) {
 }
 
 /* ─── §6 Screens ─────────────────────────────────────────────── */
-
-/* ── USER ── */
 
 function screenUserLanding() {
   return {
@@ -861,22 +848,23 @@ function screenUserLanding() {
   };
 }
 
-function filterAstrologers(list, f) {
+/* 🟢 FIXED: Correctly uses state properties */
+function filterAstrologers(list, s) {
   let r = list.filter(a => a.status === 'approved');
-  const q = (f.q || '').trim().toLowerCase();
+  const q = (s.userQuery || '').trim().toLowerCase();
   if (q) r = r.filter(a =>
     a.name.toLowerCase().includes(q) ||
     a.specialty.toLowerCase().includes(q) ||
     a.city.toLowerCase().includes(q)
   );
-  if (f.specialty !== 'all') r = r.filter(a => a.specialty === f.specialty);
-  if (f.priceBand !== 'all') {
-    const [min, max] = f.priceBand.split('-').map(Number);
+  if (s.userSpecialty !== 'all') r = r.filter(a => a.specialty === s.userSpecialty);
+  if (s.userPriceBand !== 'all') {
+    const [min, max] = s.userPriceBand.split('-').map(Number);
     r = r.filter(a => a.fee >= min && (max ? a.fee < max : true));
   }
-  if (f.sort === 'rating') r.sort((a, b) => b.rating - a.rating);
-  else if (f.sort === 'price-asc') r.sort((a, b) => a.fee - b.fee);
-  else if (f.sort === 'price-desc') r.sort((a, b) => b.fee - a.fee);
+  if (s.userSort === 'rating') r.sort((a, b) => b.rating - a.rating);
+  else if (s.userSort === 'price-asc') r.sort((a, b) => a.fee - b.fee);
+  else if (s.userSort === 'price-desc') r.sort((a, b) => b.fee - a.fee);
   return r;
 }
 
@@ -1140,7 +1128,6 @@ function screenAstroSchedule() {
   const bookedSlotIds = new Set(bookings.map(b => b.slotId));
   const futureSlots = allSlots.filter(s => !bookedSlotIds.has(s.id) && s.date >= today);
 
-  // group by date
   const byDate = {};
   const ensure = (d) => { if (!byDate[d]) byDate[d] = { sessions: [], slots: [] }; };
   bookings.filter(b => b.date >= today).forEach(b => { ensure(b.date); byDate[b.date].sessions.push(b); });
@@ -2006,6 +1993,7 @@ function matchRoute(path) {
 function renderBottomNav(path) {
   const nav = document.getElementById('bottomNav');
   if (!nav) return;
+  nav.hidden = false; // <-- 🟢 FIXED: Ensure bottom nav is visible
 
   let pendingBookings = 0;
   if (APP === 'astro') {
@@ -2046,26 +2034,32 @@ function renderBottomNav(path) {
 }
 
 function render() {
-  const path = location.hash.replace(/^#/, '') || '/';
-  const { screen, params } = matchRoute(path);
-  const fn = SCREENS[screen] || SCREENS.notFound;
-  const result = fn(params) || {};
-  const view = document.getElementById('view');
-  view.innerHTML = result.html || '';
-  document.title = (result.title ? result.title + ' · ' : '') + CONFIG.appName;
+  try {
+    const path = location.hash.replace(/^#/, '') || '/';
+    const { screen, params } = matchRoute(path);
+    const fn = SCREENS[screen] || SCREENS.notFound;
+    const result = fn(params) || {};
+    const view = document.getElementById('view');
+    view.innerHTML = result.html || '';
+    document.title = (result.title ? result.title + ' · ' : '') + CONFIG.appName;
 
-  const backBtn = document.getElementById('backBtn');
-  if (backBtn) {
-    const isRoot = path === '/' || path === '';
-    backBtn.style.visibility = isRoot ? 'hidden' : 'visible';
-    backBtn.onclick = () => {
-      if (history.length > 1) history.back();
-      else location.hash = '#/';
-    };
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+      const isRoot = path === '/' || path === '';
+      backBtn.style.visibility = isRoot ? 'hidden' : 'visible';
+      backBtn.onclick = () => {
+        if (history.length > 1) history.back();
+        else location.hash = '#/';
+      };
+    }
+    renderBottomNav(path);
+    window.scrollTo(0, 0);
+    if (typeof result.mount === 'function') result.mount(params);
+  } catch (err) {
+    console.error(err);
+    const view = document.getElementById('view');
+    if (view) view.innerHTML = `<div class="empty" style="margin-top:20px"><div class="empty__icon">💥</div><div class="empty__title">Something went wrong</div><div class="small">${U.esc(err.message)}</div><button class="btn btn--ghost" style="margin-top:12px" onclick="location.reload()">Reload</button></div>`;
   }
-  renderBottomNav(path);
-  window.scrollTo(0, 0);
-  if (typeof result.mount === 'function') result.mount(params);
 }
 
 /* ─── §9 Boot ────────────────────────────────────────────────── */
