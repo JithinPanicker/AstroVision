@@ -1,5 +1,5 @@
 /* ================================================================
-   BookMyAstrologer — Design System (Day 4)
+   BookMyAstrologer — Design System (Day 5)
    ================================================================ */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -68,7 +68,6 @@ body {
 }
 body[data-app="admin"] { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
 
-/* ─── Page transition ─── */
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -107,6 +106,7 @@ body[data-app="admin"] .topbar { max-width: 1100px; }
 }
 .icon-btn:hover { background: var(--c-surface-muted); }
 .icon-btn:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+.icon-btn--sm { width: 30px; height: 30px; font-size: 14px; }
 
 .view { max-width: 720px; margin: 0 auto; padding: 16px; }
 .view--wide { max-width: 1100px; }
@@ -134,10 +134,24 @@ body[data-app="admin"] .topbar { max-width: 1100px; }
   text-decoration: none; color: var(--c-text-muted);
   font-size: 11px;
   transition: color 0.15s, background 0.15s;
+  min-width: 0;
 }
 .nav-item.active { color: var(--c-primary); background: var(--c-primary-soft); }
-.nav-icon { font-size: 18px; line-height: 1; }
-.nav-label { font-weight: 500; }
+.nav-icon { position: relative; font-size: 18px; line-height: 1; display: inline-block; }
+.nav-label { font-weight: 500; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+.nav-badge {
+  position: absolute;
+  top: -6px; right: -10px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--c-danger); color: white;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  border: 2px solid var(--c-surface);
+}
 
 /* ─── Cards ─── */
 .card {
@@ -273,7 +287,7 @@ a.card:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .row-sub { color: var(--c-text-muted); font-size: 13px; margin-top: 1px; }
-.row-side { text-align: right; }
+.row-side { text-align: right; display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
 
 /* ─── Stats ─── */
 .stat-grid {
@@ -522,7 +536,7 @@ select.field__input { appearance: none; background-image: url("data:image/svg+xm
   margin-top: 20px;
 }
 
-/* ─── Toast with variants ─── */
+/* ─── Toast ─── */
 .toast {
   position: fixed;
   bottom: calc(86px + env(safe-area-inset-bottom));
@@ -614,6 +628,28 @@ select.field__input { appearance: none; background-image: url("data:image/svg+xm
   margin: 12px 0;
 }
 
+/* ─── Alert banner ─── */
+.alert-banner {
+  display: flex; align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--c-warning-soft);
+  border: 1px solid #fcd34d;
+  color: #713f12;
+  margin-bottom: 16px;
+}
+.alert-banner__icon {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: white;
+  display: grid; place-items: center;
+  flex: 0 0 auto;
+  font-size: 16px;
+}
+.alert-banner__text { flex: 1; min-width: 0; font-size: 13px; line-height: 1.4; }
+.alert-banner__text strong { display: block; font-size: 14px; }
+
 /* ─── Astro card (public) ─── */
 .astro-card {
   display: grid;
@@ -648,6 +684,55 @@ select.field__input { appearance: none; background-image: url("data:image/svg+xm
 .booking-card { display: grid; gap: 8px; }
 .booking-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .booking-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.quick-actions {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--c-border);
+}
+
+/* ─── Schedule ─── */
+.schedule-group { margin-bottom: 20px; }
+.schedule-date {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 4px 10px;
+  font-weight: 700; font-size: 14px;
+  color: var(--c-text);
+}
+.schedule-date__rel { color: var(--c-text-muted); font-weight: 500; font-size: 12px; }
+
+.session-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-md);
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.session-row--slot {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+.session-time {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--c-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+.session-row--slot .session-time { color: var(--c-text-muted); }
+.session-info { min-width: 0; }
+.session-title {
+  font-weight: 600; font-size: 14px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.session-sub { font-size: 12px; color: var(--c-text-muted); margin-top: 1px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 
 /* ─── Cross-app links ─── */
 .app-links {
