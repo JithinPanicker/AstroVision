@@ -2,28 +2,895 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#4338ca" />
-  <meta name="description" content="Consult verified astrologers, book slots, and manage appointments." />
-  <title>BookMyAstrologer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0D102B" />
+  <title>BookMy Astrologer — Sacred Wisdom, Modern Consultations</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Cormorant Garamond (Serif) & Plus Jakarta Sans (Clean UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- PWA Manifest -->
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="./icon.svg" />
-  <link rel="stylesheet" href="./style.css" />
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Cormorant Garamond"', 'serif'],
+          },
+          colors: {
+            indigoSacred: { 950: '#0D102B', 900: '#161B40', 800: '#212859', 700: '#2F3878' },
+            saffron: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706', 700: '#B45309' },
+            parchment: { 50: '#FDFBF7', 100: '#F8F3E8', 200: '#EFE5D1', 300: '#E2D1B3' }
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body data-app="user">
-  <header class="topbar">
-    <button class="icon-btn" id="backBtn" style="visibility:hidden" aria-label="Back">←</button>
-    <div class="brand">
-      <span class="brand-mark">✨</span>
-      <span class="brand-name">BookMyAstrologer</span>
+<body class="bg-parchment-50 text-slate-800 font-sans antialiased selection:bg-saffron-500 selection:text-white min-h-screen flex flex-col">
+
+  <!-- Toast Notification Banner -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Top Navigation & Multi-View Switcher -->
+  <header class="sticky top-0 z-40 bg-indigoSacred-950/95 backdrop-blur-md text-white border-b border-saffron-500/20 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between py-3 gap-3">
+        
+        <!-- Brand Logo -->
+        <div class="flex items-center justify-between">
+          <button onclick="navigateTo('home')" class="flex items-center gap-3 text-left group focus:outline-none">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-saffron-600 flex items-center justify-center text-indigoSacred-950 shadow-md group-hover:scale-105 transition-transform">
+              <i class="fa-solid fa-dharmachakra text-xl"></i>
+            </div>
+            <div>
+              <span class="font-serif text-2xl font-bold tracking-wide text-parchment-50 block leading-none">
+                BookMy <span class="text-saffron-400">Astrologer</span>
+              </span>
+              <span class="text-[11px] uppercase tracking-widest text-indigo-200/80 font-medium">
+                Vedic &amp; Chamber Consultations
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <!-- 5 Core Views Role / Page Switcher -->
+        <nav aria-label="Application Views" class="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 no-scrollbar">
+          <button data-nav="home" onclick="navigateTo('home')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 bg-saffron-500 text-indigoSacred-950 shadow">
+            <i class="fa-solid fa-house"></i><span>Customer Home</span>
+          </button>
+          <button data-nav="booking" onclick="navigateTo('booking')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-indigo-100 hover:bg-indigoSacred-800">
+            <i class="fa-solid fa-calendar-check"></i><span>Book Slot</span>
+          </button>
+          <button data-nav="payment" onclick="navigateTo('payment')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-indigo-100 hover:bg-indigoSacred-800">
+            <i class="fa-solid fa-receipt"></i><span>Payment &amp; Receipt</span>
+            <span id="nav-payment-badge" class="hidden px-1.5 py-0.5 text-[10px] rounded-full bg-saffron-500 text-indigoSacred-950 font-bold">1</span>
+          </button>
+          <div class="h-5 w-px bg-indigo-700/60 mx-1 hidden sm:block"></div>
+          <button data-nav="astrologer" onclick="navigateTo('astrologer')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-indigo-100 hover:bg-indigoSacred-800">
+            <i class="fa-solid fa-om text-saffron-400"></i><span>Astrologer Portal</span>
+          </button>
+          <button data-nav="admin" onclick="navigateTo('admin')" class="nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-indigo-100 hover:bg-indigoSacred-800">
+            <i class="fa-solid fa-shield-halved text-amber-300"></i><span>Admin Portal</span>
+          </button>
+        </nav>
+      </div>
     </div>
-    <button class="icon-btn" id="homeBtn" style="visibility:hidden" aria-label="Home">⌂</button>
   </header>
-  <main id="view" class="view"></main>
-  <nav id="bottomNav" class="bottom-nav" hidden></nav>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <div id="modalRoot"></div>
-  <script src="./app.js"></script>
+
+  <!-- Main Content Container -->
+  <main class="flex-grow">
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 1: CUSTOMER HOME PAGE                                            -->
+    <!-- ===================================================================== -->
+    <section id="view-home" class="view-section">
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden bg-gradient-to-br from-indigoSacred-950 via-indigoSacred-900 to-indigoSacred-800 text-white border-b border-saffron-500/30">
+        <div class="pointer-events-none absolute -top-24 -right-24 w-96 h-96 rounded-full border border-saffron-400/15"></div>
+        <div class="pointer-events-none absolute -top-12 -right-12 w-72 h-72 rounded-full border border-saffron-400/20"></div>
+        <div class="pointer-events-none absolute bottom-0 left-10 w-64 h-64 rounded-full bg-saffron-500/10 blur-3xl"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16 relative z-10">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            <div class="lg:col-span-7 space-y-5">
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigoSacred-800/90 border border-saffron-400/40 text-saffron-300 text-xs font-semibold tracking-wide">
+                <i class="fa-solid fa-sparkles"></i>
+                <span>Verified Jyotish Acharyas • Online Video &amp; Offline Chambers</span>
+              </div>
+              <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-parchment-50">
+                Clarity Written in the Stars, Guided by <span class="text-saffron-400 italic">Timeless Wisdom</span>
+              </h1>
+              <p class="text-indigo-100/90 text-base sm:text-lg max-w-2xl leading-relaxed">
+                Connect face-to-face over encrypted HD video or book a private in-person chamber session with India’s most respected Vedic, Prashna, and Vastu scholars.
+              </p>
+
+              <!-- Quick Search Bar -->
+              <div class="pt-2 flex flex-col sm:flex-row gap-3 max-w-2xl">
+                <div class="relative flex-grow">
+                  <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                  <input id="home-search-input" type="text" oninput="filterAstrologers()" placeholder="Search by Acharya name, language (Hindi, English, Tamil) or city..." class="w-full pl-11 pr-4 py-3.5 rounded-xl bg-parchment-50 text-slate-900 placeholder-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-saffron-400 shadow-lg" />
+                </div>
+                <button onclick="document.getElementById('astrologer-directory').scrollIntoView({behavior: 'smooth'})" class="px-6 py-3.5 rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-400 hover:to-saffron-500 text-indigoSacred-950 font-bold text-sm shadow-lg transition-all whitespace-nowrap cursor-pointer">
+                  Explore Scholars
+                </button>
+              </div>
+
+              <!-- Trust Metrics -->
+              <div class="pt-4 grid grid-cols-3 gap-4 max-w-lg border-t border-indigo-700/60">
+                <div><p class="font-serif text-2xl sm:text-3xl font-bold text-saffron-400">100%</p><p class="text-xs text-indigo-200">Vetted Lineage &amp; Degrees</p></div>
+                <div><p class="font-serif text-2xl sm:text-3xl font-bold text-saffron-400">48,500+</p><p class="text-xs text-indigo-200">Kundalis Analyzed</p></div>
+                <div><p class="font-serif text-2xl sm:text-3xl font-bold text-saffron-400">2 Modes</p><p class="text-xs text-indigo-200">Online &amp; Chamber Visit</p></div>
+              </div>
+            </div>
+
+            <!-- Right Hero Card: Today's Panchang & Muhurat Widget -->
+            <div class="lg:col-span-5">
+              <div class="bg-parchment-50 text-slate-800 rounded-2xl p-6 shadow-2xl border-2 border-saffron-500/40 relative">
+                <div class="flex items-center justify-between border-b border-parchment-200 pb-4 mb-4">
+                  <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-saffron-700">Today's Sacred Almanac</span>
+                    <h2 class="font-serif text-2xl font-bold text-indigoSacred-950">Drik Panchang Snapshot</h2>
+                  </div>
+                  <div class="w-11 h-11 rounded-xl bg-saffron-500/15 text-saffron-700 flex items-center justify-center"><i class="fa-solid fa-sun text-xl"></i></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-sm mb-5">
+                  <div class="bg-parchment-100 p-3 rounded-xl border border-parchment-200"><span class="text-xs text-slate-500 block">Tithi</span><span class="font-semibold text-indigoSacred-950">Shukla Trayodashi</span></div>
+                  <div class="bg-parchment-100 p-3 rounded-xl border border-parchment-200"><span class="text-xs text-slate-500 block">Nakshatra</span><span class="font-semibold text-indigoSacred-950">Ashwini (Auspicious)</span></div>
+                  <div class="bg-parchment-100 p-3 rounded-xl border border-parchment-200"><span class="text-xs text-slate-500 block">Abhijit Muhurat</span><span class="font-semibold text-emerald-700">11:48 AM – 12:36 PM</span></div>
+                  <div class="bg-parchment-100 p-3 rounded-xl border border-parchment-200"><span class="text-xs text-slate-500 block">Rahu Kaal</span><span class="font-semibold text-rose-700">01:30 PM – 03:00 PM</span></div>
+                </div>
+                <div class="bg-indigoSacred-900 text-parchment-50 rounded-xl p-4 flex items-center justify-between gap-3">
+                  <div><p class="text-xs text-saffron-300 font-semibold">Need Urgent Guidance?</p><p class="text-sm font-medium">Instant slot available in 15 mins</p></div>
+                  <button onclick="startBookingWithAstrologer(1)" class="px-4 py-2 rounded-lg bg-saffron-500 hover:bg-saffron-400 text-indigoSacred-950 text-xs font-bold transition cursor-pointer shrink-0">Quick Book</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Specialization Filter Pills & Directory -->
+      <div id="astrologer-directory" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-widest text-saffron-700">Sacred Disciplines</span>
+            <h2 class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950 mt-1">Consult Verified Astrologers</h2>
+          </div>
+          <div id="specialization-filters" class="flex flex-wrap gap-2">
+            <button onclick="setSpecializationFilter('All')" data-spec="All" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigoSacred-950 text-white shadow-sm transition cursor-pointer">All Sciences</button>
+            <button onclick="setSpecializationFilter('Vedic')" data-spec="Vedic" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer"><i class="fa-solid fa-star-and-crescent mr-1.5 text-saffron-600"></i>Vedic</button>
+            <button onclick="setSpecializationFilter('Prashna')" data-spec="Prashna" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer"><i class="fa-solid fa-compass mr-1.5 text-saffron-600"></i>Prashna</button>
+            <button onclick="setSpecializationFilter('Numerology')" data-spec="Numerology" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer"><i class="fa-solid fa-hashtag mr-1.5 text-saffron-600"></i>Numerology</button>
+            <button onclick="setSpecializationFilter('Vastu')" data-spec="Vastu" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer"><i class="fa-solid fa-gopuram mr-1.5 text-saffron-600"></i>Vastu</button>
+            <button onclick="setSpecializationFilter('Palmistry')" data-spec="Palmistry" class="spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer"><i class="fa-solid fa-hand-sparkles mr-1.5 text-saffron-600"></i>Palmistry</button>
+          </div>
+        </div>
+
+        <div id="astrologer-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 2: SLOT BOOKING PAGE (ONLINE & OFFLINE)                          -->
+    <!-- ===================================================================== -->
+    <section id="view-booking" class="view-section hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-parchment-200 pb-5">
+          <div>
+            <button onclick="navigateTo('home')" class="text-xs font-semibold text-saffron-700 hover:text-saffron-600 flex items-center gap-1.5 mb-2 cursor-pointer"><i class="fa-solid fa-arrow-left"></i> Back to Astrologers</button>
+            <h1 class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950">Schedule Consultation Slot</h1>
+            <p class="text-sm text-slate-600 mt-1">Choose between encrypted Online Video/Audio or an In-Person Chamber visit.</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs font-semibold bg-parchment-100 px-4 py-2.5 rounded-xl border border-parchment-300">
+            <span class="px-2 py-0.5 rounded bg-indigoSacred-950 text-white">Step 1</span>
+            <span class="text-indigoSacred-950">Slot &amp; Birth Details</span>
+            <i class="fa-solid fa-chevron-right text-slate-400 mx-1"></i>
+            <span class="text-slate-400">Step 2: Payment &amp; Receipt</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-8 space-y-6">
+            <div class="bg-parchment-100/80 rounded-2xl p-6 border border-parchment-300 shadow-sm">
+              <label for="booking-astrologer-select" class="block text-xs font-bold uppercase tracking-wider text-saffron-700 mb-2">1. Selected Jyotish Scholar</label>
+              <select id="booking-astrologer-select" onchange="handleBookingAstrologerChange(this.value)" class="w-full p-3.5 rounded-xl bg-white border border-parchment-300 text-indigoSacred-950 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="bg-parchment-100/80 rounded-2xl p-6 border border-parchment-300 shadow-sm">
+              <span class="block text-xs font-bold uppercase tracking-wider text-saffron-700 mb-3">2. Consultation Mode</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button type="button" id="mode-btn-online" onclick="setConsultationMode('Online')" class="p-4 rounded-xl border-2 border-indigoSacred-900 bg-indigoSacred-950 text-white text-left transition-all flex items-start gap-3.5 shadow-md cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-saffron-500 text-indigoSacred-950 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-video"></i></div>
+                  <div><div class="font-bold text-sm flex items-center gap-2"><span>Online Consultation</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">HD Video / Audio</span></div><p class="text-xs text-indigo-200 mt-1">Instant private meeting link generated upon confirmation.</p></div>
+                </button>
+                <button type="button" id="mode-btn-offline" onclick="setConsultationMode('Offline')" class="p-4 rounded-xl border-2 border-parchment-300 bg-white text-slate-800 hover:border-saffron-500 text-left transition-all flex items-start gap-3.5 cursor-pointer">
+                  <div class="w-10 h-10 rounded-lg bg-parchment-200 text-indigoSacred-900 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-gopuram"></i></div>
+                  <div><div class="font-bold text-sm flex items-center gap-2"><span>Offline Chamber Visit</span><span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">In-Person</span></div><p class="text-xs text-slate-500 mt-1">Visit the Acharya's private consultation chamber in person.</p></div>
+                </button>
+              </div>
+              <div id="mode-details-box" class="mt-4 p-4 rounded-xl bg-white border border-parchment-300"><!-- Dynamic --></div>
+            </div>
+
+            <div class="bg-parchment-100/80 rounded-2xl p-6 border border-parchment-300 shadow-sm">
+              <span class="block text-xs font-bold uppercase tracking-wider text-saffron-700 mb-3">3. Select Date &amp; Auspicious Time Slot</span>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
+                <div>
+                  <label for="booking-date" class="block text-xs font-semibold text-slate-600 mb-1.5">Consultation Date</label>
+                  <input type="date" id="booking-date" onchange="updateBookingSummary()" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm font-semibold text-indigoSacred-950 focus:outline-none focus:ring-2 focus:ring-saffron-500" />
+                </div>
+                <div>
+                  <label for="booking-duration" class="block text-xs font-semibold text-slate-600 mb-1.5">Session Duration</label>
+                  <select id="booking-duration" onchange="updateBookingSummary()" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm font-semibold text-indigoSacred-950 focus:outline-none focus:ring-2 focus:ring-saffron-500">
+                    <option value="30">30 Minutes (Standard Kundali Query)</option>
+                    <option value="60">60 Minutes (Deep Chart + Remedies)</option>
+                  </select>
+                </div>
+              </div>
+              <label class="block text-xs font-semibold text-slate-600 mb-2">Available Slots (IST)</label>
+              <div id="time-slots-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"><!-- Dynamic --></div>
+            </div>
+
+            <div class="bg-parchment-100/80 rounded-2xl p-6 border border-parchment-300 shadow-sm">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold uppercase tracking-wider text-saffron-700">4. Birth Chart (Janma Kundali) Details</span>
+                <span class="text-[11px] text-slate-500"><i class="fa-solid fa-lock mr-1"></i>Confidential &amp; Encrypted</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><label for="client-name" class="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label><input type="text" id="client-name" placeholder="e.g., Aarav Sharma" value="Rohan Kulkarni" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" /></div>
+                <div><label for="client-phone" class="block text-xs font-semibold text-slate-700 mb-1">WhatsApp / Mobile Number *</label><input type="tel" id="client-phone" placeholder="+91 98765 43210" value="+91 98204 55190" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" /></div>
+                <div><label for="client-dob" class="block text-xs font-semibold text-slate-700 mb-1">Date of Birth *</label><input type="date" id="client-dob" value="1994-08-18" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" /></div>
+                <div><label for="client-tob" class="block text-xs font-semibold text-slate-700 mb-1">Time of Birth (Exact) *</label><input type="time" id="client-tob" value="06:42" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" /></div>
+                <div class="sm:col-span-2"><label for="client-pob" class="block text-xs font-semibold text-slate-700 mb-1">Place of Birth (City, State, Country) *</label><input type="text" id="client-pob" placeholder="e.g., Varanasi, Uttar Pradesh, India" value="Pune, Maharashtra, India" class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" /></div>
+                <div class="sm:col-span-2"><label for="client-notes" class="block text-xs font-semibold text-slate-700 mb-1">Primary Question / Focus Area</label><textarea id="client-notes" rows="2" placeholder="Career transition, marriage compatibility..." class="w-full p-3 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500">Career growth and planetary transit analysis for upcoming business launch.</textarea></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-4">
+            <div class="sticky top-24 bg-indigoSacred-950 text-parchment-50 rounded-2xl p-6 shadow-xl border border-saffron-500/30">
+              <h3 class="font-serif text-2xl font-bold text-saffron-400 border-b border-indigo-800 pb-3 mb-4">Consultation Summary</h3>
+              <div id="booking-summary-card" class="space-y-3 text-sm"><!-- Dynamic --></div>
+              <button onclick="proceedToPayment()" class="mt-6 w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-400 hover:to-saffron-500 text-indigoSacred-950 font-bold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <span>Proceed to Secure Payment</span><i class="fa-solid fa-arrow-right"></i>
+              </button>
+              <p class="text-[11px] text-indigo-300 text-center mt-3"><i class="fa-solid fa-shield-check text-emerald-400 mr-1"></i>100% Dakshina Protection &amp; Instant Reschedule</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 3: PAYMENT & RECEIPT PAGE                                        -->
+    <!-- ===================================================================== -->
+    <section id="view-payment" class="view-section hidden">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="mb-8 border-b border-parchment-200 pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950">Dakshina Checkout &amp; Kundali Receipt</h1>
+            <p class="text-sm text-slate-600 mt-1">Complete your payment to confirm your slot and notify the Acharya immediately.</p>
+          </div>
+          <span id="payment-status-pill" class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold self-start"><i class="fa-solid fa-clock"></i> Awaiting Payment</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-7 space-y-6">
+            <div id="payment-form-card" class="bg-parchment-100/90 rounded-2xl p-6 border border-parchment-300 shadow-sm">
+              <h2 class="font-serif text-2xl font-bold text-indigoSacred-950 mb-4">Select Payment Method</h2>
+              <div class="grid grid-cols-3 gap-3 mb-6">
+                <button type="button" onclick="selectPaymentMethod('UPI')" data-pay="UPI" class="pay-method-btn p-3.5 rounded-xl border-2 border-indigoSacred-950 bg-indigoSacred-950 text-white font-semibold text-xs sm:text-sm flex flex-col items-center gap-1.5 cursor-pointer"><i class="fa-solid fa-mobile-screen-button text-lg text-saffron-400"></i><span>UPI / GPay</span></button>
+                <button type="button" onclick="selectPaymentMethod('Card')" data-pay="Card" class="pay-method-btn p-3.5 rounded-xl border-2 border-parchment-300 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex flex-col items-center gap-1.5 hover:border-saffron-500 cursor-pointer"><i class="fa-regular fa-credit-card text-lg text-saffron-600"></i><span>Credit / Debit</span></button>
+                <button type="button" onclick="selectPaymentMethod('Netbanking')" data-pay="Netbanking" class="pay-method-btn p-3.5 rounded-xl border-2 border-parchment-300 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex flex-col items-center gap-1.5 hover:border-saffron-500 cursor-pointer"><i class="fa-solid fa-building-columns text-lg text-saffron-600"></i><span>Netbanking</span></button>
+              </div>
+              <div id="payment-method-details" class="bg-white p-5 rounded-xl border border-parchment-300 mb-6"><!-- Dynamic --></div>
+              <button id="confirm-pay-btn" onclick="processSimulatedPayment()" class="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-400 hover:to-saffron-500 text-indigoSacred-950 font-bold text-base shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-lock"></i><span id="pay-btn-label">Pay &amp; Confirm Slot</span>
+              </button>
+            </div>
+            <div id="payment-success-banner" class="hidden bg-emerald-950 text-white rounded-2xl p-6 border border-emerald-500/40 shadow-xl">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-emerald-500 text-emerald-950 flex items-center justify-center shrink-0 text-xl"><i class="fa-solid fa-check"></i></div>
+                <div class="space-y-2">
+                  <span class="text-xs font-bold uppercase tracking-wider text-emerald-300">Booking Confirmed &amp; Synced</span>
+                  <h3 class="font-serif text-2xl font-bold">Your Consultation is Scheduled!</h3>
+                  <p class="text-sm text-emerald-100/90">This appointment has been added live to both the <strong>Astrologer Portal</strong> and <strong>Admin Portal</strong> dashboards.</p>
+                  <div class="pt-3 flex flex-wrap gap-3">
+                    <button onclick="navigateTo('astrologer')" class="px-4 py-2 rounded-xl bg-saffron-500 text-indigoSacred-950 text-xs font-bold hover:bg-saffron-400 transition cursor-pointer">View in Astrologer Portal <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                    <button onclick="navigateTo('admin')" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition cursor-pointer">View in Admin Ledger</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5">
+            <div id="printable-receipt" class="bg-parchment-50 rounded-2xl p-6 border-2 border-parchment-300 shadow-lg relative overflow-hidden">
+              <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-indigoSacred-950 via-saffron-500 to-indigoSacred-950"></div>
+              <div class="flex items-center justify-between pt-2 pb-4 border-b border-dashed border-parchment-300">
+                <div><span class="text-[10px] font-bold uppercase tracking-widest text-saffron-700">Official Dakshina Slip</span><h3 class="font-serif text-2xl font-bold text-indigoSacred-950">BookMy Astrologer</h3></div>
+                <div class="text-right"><span id="receipt-id" class="text-xs font-mono font-bold text-indigoSacred-900 bg-parchment-200 px-2.5 py-1 rounded">BMA-2026-8841</span><p id="receipt-status-tag" class="text-[11px] font-bold text-amber-700 mt-1">PROFORMA INVOICE</p></div>
+              </div>
+              <div id="receipt-content-body" class="py-4 space-y-3 text-xs sm:text-sm"><!-- Dynamic --></div>
+              <div class="pt-4 border-t border-parchment-300 flex gap-3">
+                <button onclick="window.print()" class="flex-1 py-2.5 px-4 rounded-xl bg-indigoSacred-950 hover:bg-indigoSacred-800 text-white text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"><i class="fa-solid fa-print"></i> Print / Save PDF</button>
+                <button onclick="copyReceiptDetails()" class="py-2.5 px-4 rounded-xl bg-parchment-200 hover:bg-parchment-300 text-indigoSacred-950 text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer"><i class="fa-regular fa-copy"></i> Copy Slip</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 4: ASTROLOGER DASHBOARD                                          -->
+    <!-- ===================================================================== -->
+    <section id="view-astrologer" class="view-section hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="bg-indigoSacred-950 text-parchment-50 rounded-2xl p-6 sm:p-8 shadow-xl border border-saffron-500/30 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div class="flex items-center gap-4">
+            <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80" onerror="this.src='https://placehold.co/120x120/161B40/FBBF24?text=Acharya'" alt="Acharya Raghavendra Shastri" class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-saffron-400" />
+            <div>
+              <div class="flex items-center gap-2"><span class="px-2.5 py-0.5 rounded-full bg-saffron-500/20 text-saffron-300 text-[11px] font-bold">Jyotish Ratna • Verified</span><span class="text-xs text-indigo-300">ID: AST-101</span></div>
+              <h1 class="font-serif text-2xl sm:text-3xl font-bold mt-1">Acharya Raghavendra Shastri</h1>
+              <p class="text-xs sm:text-sm text-indigo-200">Vedic Astrology, Prashna Kundali • Chamber: Indiranagar, Bengaluru</p>
+            </div>
+          </div>
+          <div class="bg-indigoSacred-900 p-4 rounded-xl border border-indigo-700/70 flex items-center justify-between md:justify-end gap-4">
+            <div><span class="text-[11px] uppercase tracking-wider text-indigo-300 block">Consultation Status</span><span id="astro-status-text" class="text-sm font-bold text-emerald-400 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span> Available</span></div>
+            <button id="astro-status-toggle" onclick="toggleAstrologerStatus()" class="px-4 py-2 rounded-xl bg-emerald-500 text-indigoSacred-950 font-bold text-xs shadow hover:opacity-90 transition cursor-pointer">Switch to Busy</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          <div class="bg-parchment-100 rounded-2xl p-5 border border-parchment-300"><span class="text-xs font-bold uppercase text-slate-500">Today's Queue</span><p id="astro-kpi-count" class="font-serif text-3xl font-bold text-indigoSacred-950 mt-1">0 Sessions</p><span class="text-xs text-emerald-700 font-semibold mt-1 inline-block">Online &amp; Chamber Combined</span></div>
+          <div class="bg-parchment-100 rounded-2xl p-5 border border-parchment-300"><span class="text-xs font-bold uppercase text-slate-500">Today's Dakshina</span><p id="astro-kpi-earnings" class="font-serif text-3xl font-bold text-indigoSacred-950 mt-1">₹0</p><span class="text-xs text-saffron-700 font-semibold mt-1 inline-block">Net after 10% platform fee</span></div>
+          <div class="bg-parchment-100 rounded-2xl p-5 border border-parchment-300"><span class="text-xs font-bold uppercase text-slate-500">Chamber Check-Ins</span><p class="font-serif text-3xl font-bold text-indigoSacred-950 mt-1">0 In-Person</p><span class="text-xs text-slate-600 mt-1 inline-block">Desk Reception Ready</span></div>
+          <div class="bg-parchment-100 rounded-2xl p-5 border border-parchment-300"><span class="text-xs font-bold uppercase text-slate-500">Seeker Rating</span><p class="font-serif text-3xl font-bold text-indigoSacred-950 mt-1">4.96 ★</p><span class="text-xs text-slate-600 mt-1 inline-block">1,420 Verified Reviews</span></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-7 space-y-4">
+            <div class="flex items-center justify-between"><h2 class="font-serif text-2xl font-bold text-indigoSacred-950">Today's Appointments</h2><span class="text-xs font-semibold text-saffron-700 bg-saffron-500/15 px-3 py-1 rounded-full">Live Synced</span></div>
+            <div id="astrologer-appointments-list" class="space-y-4"><!-- Dynamic --></div>
+          </div>
+          <div class="lg:col-span-5">
+            <div class="bg-parchment-100 rounded-2xl p-6 border-2 border-parchment-300 sticky top-24">
+              <div class="flex items-center justify-between border-b border-parchment-300 pb-3 mb-4">
+                <div><span class="text-[11px] font-bold uppercase tracking-wider text-saffron-700">Janma Patrika &amp; Notes</span><h3 id="notes-client-title" class="font-serif text-2xl font-bold text-indigoSacred-950">Select a Client</h3></div>
+                <i class="fa-solid fa-scroll text-2xl text-saffron-600"></i>
+              </div>
+              <div id="notes-birth-meta" class="bg-white rounded-xl p-4 border border-parchment-300 text-xs space-y-1.5 mb-4"><!-- Dynamic --></div>
+              <label for="astro-kundali-notes" class="block text-xs font-bold text-slate-700 mb-1.5">Acharya's Planetary Observations &amp; Remedies</label>
+              <textarea id="astro-kundali-notes" rows="5" class="w-full p-3.5 rounded-xl bg-white border border-parchment-300 text-sm focus:outline-none focus:ring-2 focus:ring-saffron-500" placeholder="Write planetary transit notes, gemstone or mantra remedies..."></textarea>
+              <button onclick="saveAstrologerNotes()" class="mt-4 w-full py-3 px-4 rounded-xl bg-indigoSacred-950 hover:bg-indigoSacred-800 text-white text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer"><i class="fa-solid fa-floppy-disk text-saffron-400"></i> Save Kundali Notes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 5: ADMIN DASHBOARD                                               -->
+    <!-- ===================================================================== -->
+    <section id="view-admin" class="view-section hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-parchment-200 pb-6 mb-8">
+          <div><span class="text-xs font-bold uppercase tracking-widest text-saffron-700">Association Governance</span><h1 class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950 mt-1">Platform Admin Command Center</h1></div>
+          <div class="flex items-center gap-3"><span class="px-3.5 py-2 rounded-xl bg-indigoSacred-950 text-parchment-50 text-xs font-semibold"><i class="fa-solid fa-circle-dot text-emerald-400 mr-1.5"></i>All Gateways Operational</span></div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-10">
+          <div class="bg-indigoSacred-950 text-white rounded-2xl p-6 shadow-md border border-saffron-500/30"><div class="flex items-center justify-between"><span class="text-xs font-semibold text-indigo-200 uppercase">Total Revenue</span><i class="fa-solid fa-indian-rupee-sign text-saffron-400"></i></div><p id="admin-kpi-revenue" class="font-serif text-3xl sm:text-4xl font-bold text-saffron-400 mt-2">₹0</p><p class="text-xs text-emerald-300 mt-2"><i class="fa-solid fa-arrow-trend-up mr-1"></i>+14.2% vs last month</p></div>
+          <div class="bg-parchment-100 rounded-2xl p-6 border border-parchment-300"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500 uppercase">Active Astrologers</span><i class="fa-solid fa-om text-saffron-600"></i></div><p id="admin-kpi-astrologers" class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950 mt-2">0 / 0</p><p class="text-xs text-slate-600 mt-2">Verified Jyotish Acharyas</p></div>
+          <div class="bg-parchment-100 rounded-2xl p-6 border border-parchment-300"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500 uppercase">Today's Bookings</span><i class="fa-solid fa-calendar-check text-indigoSacred-700"></i></div><p id="admin-kpi-bookings" class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950 mt-2">0</p><p class="text-xs text-slate-600 mt-2">Online &amp; Chamber</p></div>
+          <div class="bg-parchment-100 rounded-2xl p-6 border border-parchment-300"><div class="flex items-center justify-between"><span class="text-xs font-bold text-slate-500 uppercase">Pending Payouts</span><i class="fa-solid fa-wallet text-amber-600"></i></div><p id="admin-kpi-payouts" class="font-serif text-3xl sm:text-4xl font-bold text-indigoSacred-950 mt-2">₹0</p><p class="text-xs text-amber-700 font-semibold mt-2">Scheduled Friday Settlement</p></div>
+        </div>
+
+        <div class="bg-parchment-100 rounded-2xl border border-parchment-300 shadow-sm overflow-hidden mb-10">
+          <div class="p-6 border-b border-parchment-300"><h2 class="font-serif text-2xl font-bold text-indigoSacred-950">Astrologer Roster &amp; Verification</h2></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead><tr class="bg-parchment-200/70 text-[11px] uppercase tracking-wider text-slate-600 border-b border-parchment-300"><th class="py-3.5 px-5">Acharya</th><th class="py-3.5 px-5">Specialization</th><th class="py-3.5 px-5">Chamber City</th><th class="py-3.5 px-5">Fee</th><th class="py-3.5 px-5">Verification</th><th class="py-3.5 px-5">Status</th><th class="py-3.5 px-5 text-right">Actions</th></tr></thead>
+              <tbody id="admin-astrologer-table" class="divide-y divide-parchment-200 bg-white text-sm"><!-- Dynamic --></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-parchment-100 rounded-2xl border border-parchment-300 shadow-sm overflow-hidden">
+          <div class="p-6 border-b border-parchment-300"><h2 class="font-serif text-2xl font-bold text-indigoSacred-950">Recent Transactions</h2></div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead><tr class="bg-parchment-200/70 text-[11px] uppercase tracking-wider text-slate-600 border-b border-parchment-300"><th class="py-3.5 px-5">Receipt ID</th><th class="py-3.5 px-5">Seeker Name</th><th class="py-3.5 px-5">Astrologer</th><th class="py-3.5 px-5">Mode &amp; Slot</th><th class="py-3.5 px-5">Amount</th><th class="py-3.5 px-5">Status</th></tr></thead>
+              <tbody id="admin-transactions-table" class="divide-y divide-parchment-200 bg-white text-sm"><!-- Dynamic --></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Custom Modal -->
+  <div id="session-modal" class="fixed inset-0 z-50 hidden bg-indigoSacred-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-parchment-50 rounded-2xl max-w-lg w-full p-6 border-2 border-saffron-500 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-parchment-200 pb-3 mb-4">
+        <h3 id="modal-title" class="font-serif text-2xl font-bold text-indigoSacred-950">Session Room</h3>
+        <button onclick="closeSessionModal()" class="w-8 h-8 rounded-lg bg-parchment-200 hover:bg-parchment-300 flex items-center justify-center text-slate-700 cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div id="modal-body" class="space-y-4 text-sm text-slate-700"><!-- Dynamic --></div>
+      <div class="mt-6 flex justify-end"><button onclick="closeSessionModal()" class="px-5 py-2.5 rounded-xl bg-indigoSacred-950 text-white text-xs font-bold cursor-pointer">Close Window</button></div>
+    </div>
+  </div>
+
+  <footer class="bg-indigoSacred-950 text-indigo-200 border-t border-saffron-500/20 mt-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+      <div class="flex items-center gap-2"><i class="fa-solid fa-dharmachakra text-saffron-400 text-base"></i><span class="font-serif text-base font-bold text-white">BookMy Astrologer</span><span class="text-indigo-400">© 2026 All Rights Reserved</span></div>
+      <p class="text-indigo-300 text-center sm:text-right">Sacred Jyotish Consultations • Encrypted Online Video &amp; Verified In-Person Chambers</p>
+    </div>
+  </footer>
+
+  <script>
+    // 1. MASTER APPLICATION STATE (With LocalStorage Persistence)
+    const STORAGE_KEY = 'bma_day6_state';
+
+    const defaultState = {
+      currentView: 'home',
+      specializationFilter: 'All',
+      searchQuery: '',
+      astrologerAvailable: true,
+      selectedPaymentMethod: 'UPI',
+      selectedAppointmentNoteId: null,
+      astrologers: [
+        { id: 1, name: 'Acharya Raghavendra Shastri', title: 'Jyotish Ratna • PhD (Vedic Sciences)', specialization: 'Vedic', subSpecialties: ['Vedic', 'Prashna'], experience: 24, rating: 4.96, reviews: 1420, languages: ['Hindi', 'English', 'Sanskrit', 'Kannada'], fee: 1500, city: 'Bengaluru', chamberAddress: 'No. 42, 2nd Floor, 100 Feet Road, HAL 2nd Stage, Indiranagar, Bengaluru 560038', mapQuery: 'https://maps.google.com/?q=Indiranagar+100+Feet+Road+Bengaluru', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&q=80', verified: true, active: true },
+        { id: 2, name: 'Pandit Devendra Upadhyay', title: 'Kashi Vidwat Parishad Gold Medalist', specialization: 'Prashna', subSpecialties: ['Prashna', 'Vedic'], experience: 19, rating: 4.92, reviews: 980, languages: ['Hindi', 'Bhojpuri', 'English'], fee: 1200, city: 'Varanasi', chamberAddress: 'B-21/45 Kamachha Road, Near Gurubagh, Varanasi, Uttar Pradesh 221010', mapQuery: 'https://maps.google.com/?q=Kamachha+Varanasi', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80', verified: true, active: true },
+        { id: 3, name: 'Dr. Meenakshi Sundaram', title: 'Chaldean & Vedic Numerology Fellow', specialization: 'Numerology', subSpecialties: ['Numerology', 'Palmistry'], experience: 15, rating: 4.89, reviews: 845, languages: ['Tamil', 'English', 'Malayalam'], fee: 1100, city: 'Chennai', chamberAddress: '18, Luz Church Road, Mylapore, Chennai, Tamil Nadu 600004', mapQuery: 'https://maps.google.com/?q=Mylapore+Chennai', photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80', verified: true, active: true },
+        { id: 4, name: 'Acharya Vikramaditya Joshi', title: 'M.Arch & Traditional Sthapatya Vastu', specialization: 'Vastu', subSpecialties: ['Vastu', 'Vedic'], experience: 21, rating: 4.94, reviews: 1120, languages: ['Marathi', 'Hindi', 'Gujarati', 'English'], fee: 1800, city: 'Pune', chamberAddress: '304, Prabhat Chambers, Deccan Gymkhana, Pune, Maharashtra 411004', mapQuery: 'https://maps.google.com/?q=Deccan+Gymkhana+Pune', photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80', verified: true, active: true },
+        { id: 5, name: 'Guruji Harishankar Mishra', title: 'Samudrika Shastra & Hasta Rekha Expert', specialization: 'Palmistry', subSpecialties: ['Palmistry', 'Prashna'], experience: 28, rating: 4.91, reviews: 1640, languages: ['Hindi', 'Bengali', 'English'], fee: 1350, city: 'Kolkata', chamberAddress: '14A, Rashbehari Avenue, Kalighat, Kolkata, West Bengal 700026', mapQuery: 'https://maps.google.com/?q=Kalighat+Kolkata', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80', verified: true, active: true },
+        { id: 6, name: 'Smt. Ananya Bhattacharya', title: 'Nadi Jyotish & KP System Specialist', specialization: 'Vedic', subSpecialties: ['Vedic', 'Numerology'], experience: 12, rating: 4.87, reviews: 530, languages: ['Bengali', 'Hindi', 'English'], fee: 950, city: 'New Delhi', chamberAddress: 'K-19, Chittaranjan Park, New Delhi 110019', mapQuery: 'https://maps.google.com/?q=Chittaranjan+Park+New+Delhi', photo: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=300&q=80', verified: false, active: true }
+      ],
+      draftBooking: { astrologerId: 1, mode: 'Online', date: '', slot: '04:30 PM', duration: 30, clientName: 'Rohan Kulkarni', clientPhone: '+91 98204 55190', dob: '1994-08-18', tob: '06:42', pob: 'Pune, Maharashtra, India', notes: 'Career growth and planetary transit analysis.', receiptId: 'BMA-2026-8841', paid: false },
+      appointments: [
+        { id: 'APT-901', receiptId: 'BMA-2026-8835', astrologerId: 1, clientName: 'Priya Nair', mode: 'Online', date: 'Today', slot: '02:00 PM', dob: '1991-04-12', tob: '14:15', pob: 'Kochi, Kerala', question: 'Marriage timing & Jupiter transit in 7th house.', feePaid: 1829, status: 'Ready to Join', meetingLink: 'https://meet.bookmyastrologer.in/jyotish-901', kundaliNotes: 'Simha Lagna. Guru Mahadasha active till 2028.' },
+        { id: 'APT-902', receiptId: 'BMA-2026-8838', astrologerId: 1, clientName: 'Vikramaditya Rao', mode: 'Offline', date: 'Today', slot: '03:15 PM', dob: '1986-11-29', tob: '09:05', pob: 'Bengaluru, Karnataka', question: 'New factory land Vastu & Mahadasha transition.', feePaid: 1829, status: 'Waiting at Chamber', meetingLink: 'Indiranagar Chamber', kundaliNotes: 'Makara Rashi. Sade Sati final phase ending.' }
+      ],
+      transactions: [
+        { receiptId: 'BMA-2026-8838', clientName: 'Vikramaditya Rao', astrologerName: 'Acharya Raghavendra Shastri', mode: 'Offline Chamber', slot: 'Today, 03:15 PM', amount: 1829, status: 'Settled' },
+        { receiptId: 'BMA-2026-8835', clientName: 'Priya Nair', astrologerName: 'Acharya Raghavendra Shastri', mode: 'Online Video', slot: 'Today, 02:00 PM', amount: 1829, status: 'Settled' }
+      ],
+      baseRevenue: 284500,
+      baseBookingsCount: 18
+    };
+
+    let appState = JSON.parse(JSON.stringify(defaultState));
+
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); }
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try { appState = JSON.parse(saved); } catch(e) { console.error("State load failed", e); }
+      }
+    }
+
+    const AVAILABLE_SLOTS = ['10:30 AM', '11:45 AM', '02:00 PM', '03:15 PM', '04:30 PM', '05:45 PM', '07:00 PM', '08:15 PM'];
+
+    // 2. INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      const todayStr = new Date().toISOString().split('T')[0];
+      if(!appState.draftBooking.date) appState.draftBooking.date = todayStr;
+      
+      const dateInput = document.getElementById('booking-date');
+      if (dateInput) { dateInput.value = appState.draftBooking.date; dateInput.min = todayStr; }
+
+      renderCustomerHome();
+      populateAstrologerDropdown();
+      renderTimeSlots();
+      setConsultationMode(appState.draftBooking.mode);
+      updateBookingSummary();
+      renderPaymentAndReceipt();
+      renderAstrologerDashboard();
+      renderAdminDashboard();
+      
+      // Register PWA
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      }
+    });
+
+    // 3. NAVIGATION
+    function navigateTo(viewName) {
+      appState.currentView = viewName;
+      saveState();
+      document.querySelectorAll('.view-section').forEach(sec => sec.classList.add('hidden'));
+      const target = document.getElementById(`view-${viewName}`);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const isMatch = btn.getAttribute('data-nav') === viewName;
+        if (isMatch) btn.className = 'nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 bg-saffron-500 text-indigoSacred-950 shadow';
+        else btn.className = 'nav-tab px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-indigo-100 hover:bg-indigoSacred-800';
+      });
+
+      if (viewName === 'home') renderCustomerHome();
+      if (viewName === 'booking') { populateAstrologerDropdown(); updateBookingSummary(); }
+      if (viewName === 'payment') renderPaymentAndReceipt();
+      if (viewName === 'astrologer') renderAstrologerDashboard();
+      if (viewName === 'admin') renderAdminDashboard();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 4. TOAST SYSTEM
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgClass = type === 'success' ? 'bg-indigoSacred-950 border-saffron-400 text-white' : 'bg-rose-900 border-rose-400 text-white';
+      const iconClass = type === 'success' ? 'fa-circle-check text-saffron-400' : 'fa-circle-exclamation text-rose-300';
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border shadow-2xl text-xs sm:text-sm font-medium transition-all duration-300 ${bgClass}`;
+      toast.innerHTML = `<i class="fa-solid ${iconClass} text-base"></i><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(8px)'; setTimeout(() => toast.remove(), 300); }, 3400);
+    }
+
+    // VIEW 1: CUSTOMER HOME
+    function setSpecializationFilter(spec) {
+      appState.specializationFilter = spec;
+      saveState();
+      document.querySelectorAll('.spec-btn').forEach(btn => {
+        if (btn.getAttribute('data-spec') === spec) btn.className = 'spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-indigoSacred-950 text-white shadow-sm transition cursor-pointer';
+        else btn.className = 'spec-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-parchment-100 text-slate-700 border border-parchment-300 hover:bg-parchment-200 transition cursor-pointer';
+      });
+      renderCustomerHome();
+    }
+    function filterAstrologers() {
+      const input = document.getElementById('home-search-input');
+      appState.searchQuery = input ? input.value.trim().toLowerCase() : '';
+      renderCustomerHome();
+    }
+    function renderCustomerHome() {
+      const grid = document.getElementById('astrologer-cards-grid');
+      if (!grid) return;
+      const filtered = appState.astrologers.filter(astro => {
+        if (!astro.active) return false;
+        const matchesSpec = appState.specializationFilter === 'All' || astro.subSpecialties.includes(appState.specializationFilter);
+        const q = appState.searchQuery;
+        const matchesQuery = !q || astro.name.toLowerCase().includes(q) || astro.city.toLowerCase().includes(q) || astro.specialization.toLowerCase().includes(q) || astro.languages.some(l => l.toLowerCase().includes(q));
+        return matchesSpec && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="col-span-full bg-parchment-100 rounded-2xl p-10 text-center border border-parchment-300"><i class="fa-solid fa-compass text-3xl text-saffron-600 mb-3"></i><h3 class="font-serif text-2xl font-bold text-indigoSacred-950">No Scholars Match Your Filter</h3><p class="text-sm text-slate-600 mt-1">Try resetting filters.</p><button onclick="setSpecializationFilter('All'); document.getElementById('home-search-input').value=''; filterAstrologers();" class="mt-4 px-5 py-2.5 rounded-xl bg-indigoSacred-950 text-white text-xs font-bold cursor-pointer">Reset Filters</button></div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(astro => `
+        <article class="bg-parchment-100/90 hover:bg-white rounded-2xl border border-parchment-300 hover:border-saffron-500/70 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between overflow-hidden group">
+          <div class="p-6">
+            <div class="flex items-start justify-between gap-3 mb-4">
+              <div class="flex items-center gap-3.5">
+                <img src="${astro.photo}" onerror="this.src='https://placehold.co/120x120/161B40/FBBF24?text=Jyotish'" alt="${astro.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-saffron-500/50 shadow-sm" />
+                <div>
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="px-2.5 py-0.5 rounded-md bg-indigoSacred-950 text-saffron-300 text-[11px] font-bold tracking-wide">${astro.specialization}</span>
+                    ${astro.verified ? `<span class="text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md"><i class="fa-solid fa-circle-check mr-0.5"></i>Verified</span>` : `<span class="text-[11px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md">Pending Audit</span>`}
+                  </div>
+                  <h3 class="font-serif text-xl font-bold text-indigoSacred-950 mt-1 group-hover:text-saffron-700 transition-colors">${astro.name}</h3>
+                  <p class="text-xs text-slate-500">${astro.title}</p>
+                </div>
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-2 bg-parchment-50 p-3 rounded-xl border border-parchment-200 text-center mb-4">
+              <div><span class="text-[11px] text-slate-500 block">Experience</span><span class="text-xs font-bold text-indigoSacred-950">${astro.experience} Yrs</span></div>
+              <div class="border-x border-parchment-200"><span class="text-[11px] text-slate-500 block">Rating</span><span class="text-xs font-bold text-amber-600">${astro.rating} ★</span></div>
+              <div><span class="text-[11px] text-slate-500 block">Chamber</span><span class="text-xs font-bold text-indigoSacred-950">${astro.city}</span></div>
+            </div>
+            <div class="space-y-2 text-xs text-slate-600">
+              <div class="flex items-center gap-2"><i class="fa-solid fa-language text-saffron-600 w-4"></i><span>${astro.languages.join(', ')}</span></div>
+              <div class="flex items-center gap-2"><i class="fa-solid fa-video text-indigoSacred-700 w-4"></i><span>Online Video &amp; In-Person Chamber</span></div>
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-parchment-200/60 border-t border-parchment-300 flex items-center justify-between gap-3">
+            <div><span class="text-[11px] text-slate-500 block">Dakshina (30 mins)</span><span class="font-serif text-2xl font-bold text-indigoSacred-950">₹${astro.fee.toLocaleString('en-IN')}</span></div>
+            <button onclick="startBookingWithAstrologer(${astro.id})" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-saffron-500 to-saffron-600 hover:from-saffron-400 hover:to-saffron-500 text-indigoSacred-950 font-bold text-xs sm:text-sm shadow transition-all flex items-center gap-2 cursor-pointer"><span>Book Now</span><i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        </article>
+      `).join('');
+    }
+    function startBookingWithAstrologer(astrologerId) {
+      appState.draftBooking.astrologerId = astrologerId;
+      appState.draftBooking.paid = false;
+      saveState();
+      navigateTo('booking');
+    }
+
+    // VIEW 2: BOOKING
+    function populateAstrologerDropdown() {
+      const select = document.getElementById('booking-astrologer-select');
+      if (!select) return;
+      select.innerHTML = appState.astrologers.filter(a => a.active).map(a => `<option value="${a.id}" ${a.id === appState.draftBooking.astrologerId ? 'selected' : ''}>${a.name} — ${a.specialization} (${a.city} • ₹${a.fee}/30m)</option>`).join('');
+    }
+    function handleBookingAstrologerChange(val) {
+      appState.draftBooking.astrologerId = parseInt(val, 10);
+      saveState();
+      setConsultationMode(appState.draftBooking.mode);
+      updateBookingSummary();
+    }
+    function setConsultationMode(mode) {
+      appState.draftBooking.mode = mode;
+      const onlineBtn = document.getElementById('mode-btn-online');
+      const offlineBtn = document.getElementById('mode-btn-offline');
+      const detailsBox = document.getElementById('mode-details-box');
+      const astro = appState.astrologers.find(a => a.id === appState.draftBooking.astrologerId) || appState.astrologers[0];
+
+      if (mode === 'Online') {
+        onlineBtn.className = 'p-4 rounded-xl border-2 border-indigoSacred-900 bg-indigoSacred-950 text-white text-left transition-all flex items-start gap-3.5 shadow-md cursor-pointer';
+        offlineBtn.className = 'p-4 rounded-xl border-2 border-parchment-300 bg-white text-slate-800 hover:border-saffron-500 text-left transition-all flex items-start gap-3.5 cursor-pointer';
+        detailsBox.innerHTML = `<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div class="flex items-start gap-3"><div class="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5"><i class="fa-solid fa-link"></i></div><div><p class="text-xs font-bold text-indigoSacred-950">Encrypted HD Video &amp; Audio Room</p><p class="text-xs text-slate-600 mt-0.5">Meeting URL: <span class="font-mono text-indigoSacred-800 bg-parchment-100 px-2 py-0.5 rounded">meet.bookmyastrologer.in/live-${astro.id}</span></p></div></div><span class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 self-start">Zero Travel</span></div>`;
+      } else {
+        offlineBtn.className = 'p-4 rounded-xl border-2 border-indigoSacred-900 bg-indigoSacred-950 text-white text-left transition-all flex items-start gap-3.5 shadow-md cursor-pointer';
+        onlineBtn.className = 'p-4 rounded-xl border-2 border-parchment-300 bg-white text-slate-800 hover:border-saffron-500 text-left transition-all flex items-start gap-3.5 cursor-pointer';
+        detailsBox.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center"><div class="md:col-span-7 space-y-2"><span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-saffron-700"><i class="fa-solid fa-location-dot"></i> Verified Chamber</span><p class="text-sm font-bold text-indigoSacred-950">${astro.name} — ${astro.city}</p><p class="text-xs text-slate-600 leading-relaxed">${astro.chamberAddress}</p><div class="pt-1"><a href="${astro.mapQuery}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigoSacred-950 text-white text-xs font-semibold hover:bg-indigoSacred-800 transition"><i class="fa-solid fa-diamond-turn-right text-saffron-400"></i> Open Google Maps</a></div></div><div class="md:col-span-5"><div class="relative rounded-xl overflow-hidden border border-parchment-300 bg-indigoSacred-900 h-32 flex flex-col items-center justify-center text-center p-3"><div class="relative z-10 w-8 h-8 rounded-full bg-saffron-500 text-indigoSacred-950 flex items-center justify-center shadow-lg mb-1.5"><i class="fa-solid fa-location-dot"></i></div><p class="relative z-10 text-xs font-bold text-white">${astro.city} Chamber</p></div></div></div>`;
+      }
+      saveState();
+      updateBookingSummary();
+    }
+    function renderTimeSlots() {
+      const grid = document.getElementById('time-slots-grid');
+      if (!grid) return;
+      grid.innerHTML = AVAILABLE_SLOTS.map(slot => {
+        const isSelected = appState.draftBooking.slot === slot;
+        return `<button type="button" onclick="selectTimeSlot('${slot}')" class="py-2.5 px-3 rounded-xl text-xs font-bold border transition-all cursor-pointer ${isSelected ? 'bg-indigoSacred-950 text-saffron-400 border-indigoSacred-950 shadow' : 'bg-white text-slate-700 border-parchment-300 hover:border-saffron-500'}">${slot}</button>`;
+      }).join('');
+    }
+    function selectTimeSlot(slot) {
+      appState.draftBooking.slot = slot;
+      saveState();
+      renderTimeSlots();
+      updateBookingSummary();
+    }
+    function calculatePricing() {
+      const astro = appState.astrologers.find(a => a.id === appState.draftBooking.astrologerId) || appState.astrologers[0];
+      const durationEl = document.getElementById('booking-duration');
+      const duration = durationEl ? parseInt(durationEl.value, 10) : appState.draftBooking.duration;
+      appState.draftBooking.duration = duration;
+      const multiplier = duration === 60 ? 1.8 : 1;
+      const consultationFee = Math.round(astro.fee * multiplier);
+      const platformFee = 50;
+      const gst = Math.round((consultationFee + platformFee) * 0.18);
+      return { astro, duration, consultationFee, platformFee, gst, total: consultationFee + platformFee + gst };
+    }
+    function updateBookingSummary() {
+      const summaryEl = document.getElementById('booking-summary-card');
+      if (!summaryEl) return;
+      const dateEl = document.getElementById('booking-date');
+      if (dateEl && dateEl.value) appState.draftBooking.date = dateEl.value;
+      const { astro, duration, consultationFee, platformFee, gst, total } = calculatePricing();
+      summaryEl.innerHTML = `
+        <div class="bg-indigoSacred-900 p-3.5 rounded-xl border border-indigo-800"><span class="text-[11px] uppercase tracking-wider text-saffron-300 font-bold">Astrologer</span><p class="font-bold text-base text-white mt-0.5">${astro.name}</p><p class="text-xs text-indigo-200">${astro.specialization} • ${astro.city}</p></div>
+        <div class="space-y-2 pt-2 text-xs sm:text-sm">
+          <div class="flex justify-between"><span class="text-indigo-200">Mode</span><span class="font-bold text-saffron-300">${appState.draftBooking.mode === 'Online' ? 'Online HD Video' : 'Offline Chamber'}</span></div>
+          <div class="flex justify-between"><span class="text-indigo-200">Date &amp; Slot</span><span class="font-semibold text-white">${appState.draftBooking.date} • ${appState.draftBooking.slot}</span></div>
+        </div>
+        <div class="border-t border-indigo-800 pt-3 mt-3 space-y-2 text-xs sm:text-sm">
+          <div class="flex justify-between"><span class="text-indigo-200">Dakshina</span><span>₹${consultationFee.toLocaleString('en-IN')}</span></div>
+          <div class="flex justify-between"><span class="text-indigo-200">Platform Fee</span><span>₹${platformFee}</span></div>
+          <div class="flex justify-between"><span class="text-indigo-200">GST (18%)</span><span>₹${gst.toLocaleString('en-IN')}</span></div>
+          <div class="flex justify-between text-base font-bold text-saffron-400 border-t border-indigo-800 pt-2.5 mt-2"><span>Total</span><span>₹${total.toLocaleString('en-IN')}</span></div>
+        </div>`;
+      saveState();
+    }
+    function proceedToPayment() {
+      const name = document.getElementById('client-name').value.trim();
+      const phone = document.getElementById('client-phone').value.trim();
+      const dob = document.getElementById('client-dob').value;
+      const tob = document.getElementById('client-tob').value;
+      const pob = document.getElementById('client-pob').value.trim();
+      const notes = document.getElementById('client-notes').value.trim();
+      if (!name || !dob || !tob || !pob) { showToast('Please complete all required Janma Kundali fields.', 'error'); return; }
+      Object.assign(appState.draftBooking, { clientName: name, clientPhone: phone, dob, tob, pob, notes, paid: false, receiptId: 'BMA-2026-' + Math.floor(1000 + Math.random() * 9000) });
+      saveState();
+      document.getElementById('nav-payment-badge').classList.remove('hidden');
+      navigateTo('payment');
+      showToast('Slot held for 10 minutes. Complete payment to confirm.');
+    }
+
+    // VIEW 3: PAYMENT
+    function selectPaymentMethod(method) {
+      appState.selectedPaymentMethod = method;
+      saveState();
+      document.querySelectorAll('.pay-method-btn').forEach(btn => {
+        if (btn.getAttribute('data-pay') === method) btn.className = 'pay-method-btn p-3.5 rounded-xl border-2 border-indigoSacred-950 bg-indigoSacred-950 text-white font-semibold text-xs sm:text-sm flex flex-col items-center gap-1.5 cursor-pointer';
+        else btn.className = 'pay-method-btn p-3.5 rounded-xl border-2 border-parchment-300 bg-white text-slate-700 font-semibold text-xs sm:text-sm flex flex-col items-center gap-1.5 hover:border-saffron-500 cursor-pointer';
+      });
+      const box = document.getElementById('payment-method-details');
+      if (method === 'UPI') box.innerHTML = `<label class="block text-xs font-bold uppercase text-slate-500 mb-2">Enter UPI ID</label><div class="flex flex-col sm:flex-row gap-3"><input type="text" value="rohan.kulkarni@okicici" class="flex-grow p-3 rounded-xl border border-parchment-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-saffron-500" /><span class="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200"><i class="fa-solid fa-circle-check mr-1.5"></i>Verified</span></div>`;
+      else if (method === 'Card') box.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3"><div class="sm:col-span-2"><label class="block text-xs font-bold text-slate-500 mb-1">Card Number</label><input type="text" value="4532 •••• •••• 8891" class="w-full p-3 rounded-xl border border-parchment-300 text-sm font-mono" /></div><div><label class="block text-xs font-bold text-slate-500 mb-1">Expiry</label><input type="text" value="09 / 29" class="w-full p-3 rounded-xl border border-parchment-300 text-sm" /></div><div><label class="block text-xs font-bold text-slate-500 mb-1">CVV</label><input type="password" value="842" class="w-full p-3 rounded-xl border border-parchment-300 text-sm" /></div></div>`;
+      else box.innerHTML = `<label class="block text-xs font-bold text-slate-500 mb-2">Select Bank</label><select class="w-full p-3 rounded-xl border border-parchment-300 text-sm font-semibold"><option>HDFC Bank</option><option>ICICI Bank</option><option>SBI</option><option>Axis Bank</option></select>`;
+    }
+    function renderPaymentAndReceipt() {
+      const { astro, duration, consultationFee, platformFee, gst, total } = calculatePricing();
+      const b = appState.draftBooking;
+      const payLabel = document.getElementById('pay-btn-label');
+      if (payLabel) payLabel.textContent = b.paid ? `Paid ₹${total.toLocaleString('en-IN')} • Confirmed` : `Pay ₹${total.toLocaleString('en-IN')} & Confirm Slot`;
+      
+      const statusPill = document.getElementById('payment-status-pill');
+      const receiptStatusTag = document.getElementById('receipt-status-tag');
+      const successBanner = document.getElementById('payment-success-banner');
+      const payBtn = document.getElementById('confirm-pay-btn');
+      
+      if (b.paid) {
+        statusPill.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold self-start'; statusPill.innerHTML = '<i class="fa-solid fa-circle-check"></i> Payment Confirmed';
+        receiptStatusTag.textContent = 'PAID & CONFIRMED'; receiptStatusTag.className = 'text-[11px] font-bold text-emerald-700 mt-1';
+        successBanner.classList.remove('hidden'); payBtn.disabled = true; payBtn.classList.add('opacity-60', 'cursor-not-allowed');
+      } else {
+        statusPill.className = 'inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold self-start'; statusPill.innerHTML = '<i class="fa-solid fa-clock"></i> Awaiting Payment';
+        receiptStatusTag.textContent = 'PROFORMA INVOICE'; receiptStatusTag.className = 'text-[11px] font-bold text-amber-700 mt-1';
+        successBanner.classList.add('hidden'); payBtn.disabled = false; payBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+      document.getElementById('receipt-id').textContent = b.receiptId;
+      const accessInfo = b.mode === 'Online' ? `<span class="font-mono text-indigoSacred-900">meet.bookmyastrologer.in/live-${astro.id}</span>` : `<span>${astro.chamberAddress}</span>`;
+      document.getElementById('receipt-content-body').innerHTML = `
+        <div class="bg-parchment-100 p-3.5 rounded-xl border border-parchment-200 space-y-1"><div class="flex justify-between"><span class="text-slate-500">Seeker:</span><span class="font-bold text-indigoSacred-950">${b.clientName}</span></div><div class="flex justify-between"><span class="text-slate-500">Janma:</span><span class="font-medium text-slate-800">${b.dob} • ${b.tob}</span></div><div class="flex justify-between"><span class="text-slate-500">POB:</span><span class="font-medium text-slate-800">${b.pob}</span></div></div>
+        <div class="space-y-1.5 pt-1"><div class="flex justify-between"><span class="text-slate-500">Scholar:</span><span class="font-bold text-indigoSacred-950">${astro.name}</span></div><div class="flex justify-between"><span class="text-slate-500">Type:</span><span class="font-bold text-saffron-700">${b.mode} (${duration} Mins)</span></div><div class="flex justify-between"><span class="text-slate-500">Slot:</span><span class="font-semibold text-indigoSacred-950">${b.date} at ${b.slot}</span></div><div class="pt-1"><span class="text-slate-500 block text-[11px]">${b.mode === 'Online' ? 'Link:' : 'Venue:'}</span><div class="text-xs font-semibold text-slate-800 mt-0.5">${accessInfo}</div></div></div>
+        <div class="border-t border-dashed border-parchment-300 pt-3 space-y-1.5"><div class="flex justify-between text-slate-600"><span>Dakshina</span><span>₹${consultationFee.toLocaleString('en-IN')}</span></div><div class="flex justify-between text-slate-600"><span>Platform Fee</span><span>₹${platformFee}</span></div><div class="flex justify-between text-slate-600"><span>GST</span><span>₹${gst.toLocaleString('en-IN')}</span></div><div class="flex justify-between text-base font-bold text-indigoSacred-950 pt-2 border-t border-parchment-300"><span>Total Paid</span><span>₹${total.toLocaleString('en-IN')}</span></div></div>`;
+    }
+    function processSimulatedPayment() {
+      if (appState.draftBooking.paid) return;
+      const btn = document.getElementById('confirm-pay-btn');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Verifying Dakshina Gateway...</span>';
+      setTimeout(() => {
+        const { astro, total } = calculatePricing();
+        const b = appState.draftBooking;
+        b.paid = true;
+        const newAptId = 'APT-' + Math.floor(903 + Math.random() * 90);
+        appState.appointments.unshift({ id: newAptId, receiptId: b.receiptId, astrologerId: astro.id, clientName: b.clientName, mode: b.mode, date: b.date, slot: b.slot, dob: b.dob, tob: b.tob, pob: b.pob, question: b.notes, feePaid: total, status: b.mode === 'Online' ? 'Ready to Join' : 'Chamber Confirmed', meetingLink: b.mode === 'Online' ? `https://meet.bookmyastrologer.in/live-${astro.id}` : astro.chamberAddress, kundaliNotes: `New booking for ${b.clientName}.` });
+        appState.selectedAppointmentNoteId = newAptId;
+        appState.transactions.unshift({ receiptId: b.receiptId, clientName: b.clientName, astrologerName: astro.name, mode: b.mode === 'Online' ? 'Online Video' : 'Offline Chamber', slot: `${b.date}, ${b.slot}`, amount: total, status: 'Settled' });
+        appState.baseRevenue += total; appState.baseBookingsCount += 1;
+        saveState();
+        document.getElementById('nav-payment-badge').classList.add('hidden');
+        renderPaymentAndReceipt(); renderAstrologerDashboard(); renderAdminDashboard();
+        showToast(`Payment of ₹${total.toLocaleString('en-IN')} confirmed! Synced to portals.`);
+      }, 750);
+    }
+    function copyReceiptDetails() {
+      const { astro, total } = calculatePricing();
+      const b = appState.draftBooking;
+      const text = `BookMy Astrologer Receipt (${b.receiptId})\nSeeker: ${b.clientName}\nAstrologer: ${astro.name}\nSlot: ${b.date} at ${b.slot}\nTotal: INR ${total}`;
+      const temp = document.createElement('textarea'); temp.value = text; document.body.appendChild(temp); temp.select(); document.execCommand('copy'); document.body.removeChild(temp);
+      showToast('Receipt copied!');
+    }
+
+    // VIEW 4: ASTROLOGER
+    function toggleAstrologerStatus() {
+      appState.astrologerAvailable = !appState.astrologerAvailable;
+      saveState();
+      const textEl = document.getElementById('astro-status-text');
+      const btnEl = document.getElementById('astro-status-toggle');
+      if (appState.astrologerAvailable) {
+        textEl.className = 'text-sm font-bold text-emerald-400 flex items-center gap-1.5'; textEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span> Available for Consultations';
+        btnEl.className = 'px-4 py-2 rounded-xl bg-emerald-500 text-indigoSacred-950 font-bold text-xs shadow hover:opacity-90 transition cursor-pointer'; btnEl.textContent = 'Switch to Busy';
+        showToast('Status: LIVE');
+      } else {
+        textEl.className = 'text-sm font-bold text-amber-400 flex items-center gap-1.5'; textEl.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Busy';
+        btnEl.className = 'px-4 py-2 rounded-xl bg-amber-400 text-indigoSacred-950 font-bold text-xs shadow hover:opacity-90 transition cursor-pointer'; btnEl.textContent = 'Go Available';
+        showToast('Status: Busy');
+      }
+    }
+    function renderAstrologerDashboard() {
+      const listEl = document.getElementById('astrologer-appointments-list');
+      if (!listEl) return;
+      document.getElementById('astro-kpi-count').textContent = `${appState.appointments.length} Sessions`;
+      const netEarnings = appState.appointments.reduce((sum, a) => sum + Math.round(a.feePaid * 0.9), 0);
+      document.getElementById('astro-kpi-earnings').textContent = `₹${netEarnings.toLocaleString('en-IN')}`;
+      
+      listEl.innerHTML = appState.appointments.map(apt => {
+        const isOnline = apt.mode === 'Online';
+        const isSelected = apt.id === appState.selectedAppointmentNoteId;
+        return `
+          <div onclick="selectAppointmentForNotes('${apt.id}')" class="bg-parchment-100 rounded-2xl p-5 border-2 transition-all cursor-pointer ${isSelected ? 'border-saffron-500 shadow-md bg-white' : 'border-parchment-300 hover:border-saffron-400'}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-parchment-200">
+              <div><div class="flex items-center gap-2"><span class="px-2.5 py-0.5 rounded-md text-[11px] font-bold ${isOnline ? 'bg-indigoSacred-950 text-saffron-300' : 'bg-amber-100 text-amber-800'}"><i class="fa-solid ${isOnline ? 'fa-video' : 'fa-gopuram'} mr-1"></i>${apt.mode}</span><span class="text-xs font-mono text-slate-500">${apt.receiptId}</span></div><h3 class="font-serif text-xl font-bold text-indigoSacred-950 mt-1">${apt.clientName}</h3></div>
+              <div class="sm:text-right"><span class="text-sm font-bold text-indigoSacred-950 block">${apt.date} • ${apt.slot}</span><span class="text-xs font-semibold text-emerald-700">${apt.status}</span></div>
+            </div>
+            <div class="py-3 text-xs text-slate-600 space-y-1"><p><strong>DOB:</strong> ${apt.dob} | <strong>TOB:</strong> ${apt.tob} | <strong>POB:</strong> ${apt.pob}</p><p><strong>Query:</strong> "${apt.question}"</p></div>
+            <div class="pt-2 flex flex-wrap items-center justify-between gap-2">
+              <span class="text-xs font-bold text-slate-700">Dakshina: ₹${apt.feePaid.toLocaleString('en-IN')}</span>
+              <div class="flex gap-2">${isOnline ? `<button type="button" onclick="event.stopPropagation(); launchSessionModal('${apt.id}', 'video')" class="px-4 py-2 rounded-xl bg-indigoSacred-950 hover:bg-indigoSacred-800 text-saffron-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer"><i class="fa-solid fa-video"></i> Join Video</button>` : `<button type="button" onclick="event.stopPropagation(); launchSessionModal('${apt.id}', 'checkin')" class="px-4 py-2 rounded-xl bg-saffron-500 hover:bg-saffron-400 text-indigoSacred-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer"><i class="fa-solid fa-clipboard-check"></i> Check-In</button>`}</div>
+            </div>
+          </div>`;
+      }).join('');
+      if (appState.appointments.length > 0) selectAppointmentForNotes(appState.selectedAppointmentNoteId || appState.appointments[0].id, false);
+    }
+    function selectAppointmentForNotes(aptId, notify = false) {
+      appState.selectedAppointmentNoteId = aptId; saveState();
+      const apt = appState.appointments.find(a => a.id === aptId) || appState.appointments[0];
+      if (!apt) return;
+      document.getElementById('notes-client-title').textContent = apt.clientName;
+      document.getElementById('notes-birth-meta').innerHTML = `<div class="flex justify-between"><span class="text-slate-500">DOB:</span><span class="font-bold text-indigoSacred-950">${apt.dob} at ${apt.tob}</span></div><div class="flex justify-between"><span class="text-slate-500">POB:</span><span class="font-bold text-indigoSacred-950">${apt.pob}</span></div><div class="flex justify-between"><span class="text-slate-500">Mode:</span><span class="font-bold text-saffron-700">${apt.mode} (${apt.slot})</span></div>`;
+      document.getElementById('astro-kundali-notes').value = apt.kundaliNotes || '';
+      if (notify) renderAstrologerDashboard();
+    }
+    function saveAstrologerNotes() {
+      const apt = appState.appointments.find(a => a.id === appState.selectedAppointmentNoteId);
+      if (!apt) return;
+      apt.kundaliNotes = document.getElementById('astro-kundali-notes').value;
+      saveState(); showToast(`Saved notes for ${apt.clientName}.`);
+    }
+    function launchSessionModal(aptId, actionType) {
+      const apt = appState.appointments.find(a => a.id === aptId);
+      if (!apt) return;
+      const modal = document.getElementById('session-modal');
+      const title = document.getElementById('modal-title');
+      const body = document.getElementById('modal-body');
+      if (actionType === 'video') {
+        title.textContent = 'Encrypted Jyotish Video Call';
+        body.innerHTML = `<div class="bg-indigoSacred-950 text-white p-5 rounded-xl text-center space-y-3"><div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-xl"><i class="fa-solid fa-video"></i></div><p class="font-serif text-xl font-bold">Connected with ${apt.clientName}</p><p class="text-xs text-indigo-200 font-mono">${apt.meetingLink}</p></div>`;
+      } else {
+        apt.status = 'Checked-In'; saveState(); renderAstrologerDashboard();
+        title.textContent = 'Chamber Check-In';
+        body.innerHTML = `<div class="bg-parchment-100 p-4 rounded-xl border border-parchment-300 space-y-2"><p class="font-bold text-indigoSacred-950 text-base">${apt.clientName} marked Checked-In</p><p class="text-xs text-slate-600">Desk notified to escort the seeker.</p></div>`;
+      }
+      modal.classList.remove('hidden');
+    }
+    function closeSessionModal() { document.getElementById('session-modal').classList.add('hidden'); }
+
+    // VIEW 5: ADMIN
+    function renderAdminDashboard() {
+      const activeCount = appState.astrologers.filter(a => a.active).length;
+      document.getElementById('admin-kpi-revenue').textContent = `₹${appState.baseRevenue.toLocaleString('en-IN')}`;
+      document.getElementById('admin-kpi-astrologers').textContent = `${activeCount} / ${appState.astrologers.length}`;
+      document.getElementById('admin-kpi-bookings').textContent = `${appState.baseBookingsCount}`;
+      
+      const rosterBody = document.getElementById('admin-astrologer-table');
+      if (rosterBody) {
+        rosterBody.innerHTML = appState.astrologers.map(astro => `
+          <tr class="hover:bg-parchment-50 transition-colors">
+            <td class="py-3.5 px-5"><div class="flex items-center gap-3"><img src="${astro.photo}" onerror="this.src='https://placehold.co/80x80/161B40/FBBF24?text=A'" class="w-9 h-9 rounded-lg object-cover" /><div><p class="font-bold text-indigoSacred-950">${astro.name}</p><p class="text-xs text-slate-500">${astro.experience} yrs</p></div></div></td>
+            <td class="py-3.5 px-5 text-xs font-semibold text-slate-700">${astro.specialization}</td>
+            <td class="py-3.5 px-5 text-xs text-slate-600">${astro.city}</td>
+            <td class="py-3.5 px-5 font-bold text-indigoSacred-950">₹${astro.fee}</td>
+            <td class="py-3.5 px-5">${astro.verified ? '<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">Verified</span>' : '<span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">Pending</span>'}</td>
+            <td class="py-3.5 px-5">${astro.active ? '<span class="px-2.5 py-1 rounded-full bg-indigo-100 text-indigoSacred-900 text-xs font-bold">Active</span>' : '<span class="px-2.5 py-1 rounded-full bg-slate-200 text-slate-600 text-xs font-bold">Suspended</span>'}</td>
+            <td class="py-3.5 px-5 text-right space-x-2 whitespace-nowrap">${!astro.verified ? `<button onclick="adminVerifyAstrologer(${astro.id})" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer">Approve</button>` : ''}<button onclick="adminToggleActive(${astro.id})" class="px-3 py-1.5 rounded-lg bg-parchment-200 hover:bg-parchment-300 text-indigoSacred-950 text-xs font-bold cursor-pointer">${astro.active ? 'Deactivate' : 'Activate'}</button></td>
+          </tr>`).join('');
+      }
+      const txBody = document.getElementById('admin-transactions-table');
+      if (txBody) {
+        txBody.innerHTML = appState.transactions.map(tx => `
+          <tr class="hover:bg-parchment-50 transition-colors">
+            <td class="py-3.5 px-5 font-mono text-xs font-bold text-indigoSacred-900">${tx.receiptId}</td>
+            <td class="py-3.5 px-5 font-semibold text-slate-800">${tx.clientName}</td>
+            <td class="py-3.5 px-5 text-xs text-slate-700">${tx.astrologerName}</td>
+            <td class="py-3.5 px-5 text-xs text-slate-600">${tx.mode} • ${tx.slot}</td>
+            <td class="py-3.5 px-5 font-bold text-indigoSacred-950">₹${tx.amount.toLocaleString('en-IN')}</td>
+            <td class="py-3.5 px-5"><span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>${tx.status}</span></td>
+          </tr>`).join('');
+      }
+    }
+    function adminVerifyAstrologer(id) {
+      const astro = appState.astrologers.find(a => a.id === id);
+      if (astro) { astro.verified = true; saveState(); renderAdminDashboard(); renderCustomerHome(); showToast(`${astro.name} approved.`); }
+    }
+    function adminToggleActive(id) {
+      const astro = appState.astrologers.find(a => a.id === id);
+      if (astro) { astro.active = !astro.active; saveState(); renderAdminDashboard(); renderCustomerHome(); showToast(`${astro.name} is now ${astro.active ? 'Active' : 'Suspended'}.`); }
+    }
+  </script>
 </body>
 </html>
