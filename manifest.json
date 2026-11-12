@@ -1,21 +1,18 @@
 {
-  "name": "BookMyAstrologer",
+  "name": "BookMy Astrologer",
   "short_name": "BookMyAstro",
-  "description": "Consult verified astrologers, book slots, and manage appointments.",
+  "description": "Sacred Wisdom, Modern Consultations.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#f8f7fc",
-  "theme_color": "#4338ca",
-  "lang": "en-IN",
-  "categories": ["lifestyle", "productivity"],
+  "background_color": "#0D102B",
+  "theme_color": "#0D102B",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
-  ],
-  "shortcuts": [
-    { "name": "Find astrologers", "url": "./#/user/home" },
-    { "name": "My bookings",      "url": "./#/user/bookings" }
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
   ]
 }
