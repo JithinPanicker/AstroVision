@@ -1,4 +1,4 @@
-const CACHE = 'bma-day6-v1';
+const CACHE = 'bma-day7-v1';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', (e) => {
