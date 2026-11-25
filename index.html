@@ -1,422 +1,197 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#131138" />
-  <title>BookMy Astrologer — Consult Verified Acharyas</title>
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0F172A" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="BookMy Astrologer" />
+  <meta name="description" content="BookMy Astrologer Kerala — Live Bilingual Chat & Offline Chamber Consultation Platform for Verified Kerala Jyothishis." />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data:; script-src 'self' https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https:;" />
+  <title>BookMy Astrologer Kerala | ജ്യോതിഷ കൺസൾട്ടേഷൻ</title>
 
-  <!-- PWA Manifest & Icon (Assuming these are in your repo) -->
+  <!-- PWA Manifest & App Icon -->
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230F172A'/%3E%3Cpath d='M256 110c-22 44-48 76-48 112 0 28 21 50 48 50s48-22 48-50c0-36-26-68-48-112z' fill='%23F97316'/%3E%3Cpath d='M168 300h176l-18 32H186zM238 332h36v52h-36zM156 384h200l-16 26H172z' fill='%23EAB308'/%3E%3C/svg%3E" />
 
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-            serif: ['"Cinzel"', 'serif'],
-          },
-          colors: {
-            indigoVedic: { 950: '#131138', 900: '#1E1B4B', 800: '#2E2A6E' },
-            saffron: { 400: '#FBBF24', 500: '#F59E0B', 600: '#D97706' },
-            ivory: { 50: '#FFFBEB', 100: '#FEF3C7' }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./style.css" />
 </head>
-<body class="bg-ivory-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+<body class="bg-ivory text-slate-900 font-sans antialiased selection:bg-amber-200 selection:text-slate-900">
 
-  <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+  <!-- DEMO & SECURITY POSTURE BANNER -->
+  <div id="demo-banner" class="bg-slate-950 text-amber-200 text-xs py-1.5 px-3 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex items-center gap-2">
+      <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-semibold border border-amber-400/30">
+        <i class="fa-solid fa-shield-halved text-[10px]"></i> TLS 1.3 • PCI-DSS Hosted • DPDP 2023
+      </span>
+      <span class="text-slate-300">Demo Mode — No real money moves. All cross-portal state syncs locally in real time.</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <span id="sync-indicator" class="inline-flex items-center gap-1.5 text-emerald-400 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>Live Sync Active</span>
+      </span>
+      <button type="button" data-action="open-security-modal" class="underline text-amber-300 hover:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 rounded">
+        Security &amp; Privacy
+      </button>
+    </div>
+  </div>
 
-  <!-- ===================================================================== -->
-  <!-- CUSTOMER AUTHENTICATION GATEWAY (Login Screen)                        -->
-  <!-- ===================================================================== -->
-  <div id="auth-gateway" class="fixed inset-0 z-50 bg-slate-950 flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl relative overflow-hidden">
-      <div class="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-saffron-400 to-saffron-600"></div>
-      
-      <div class="text-center mb-8">
-        <div class="w-16 h-16 mx-auto bg-indigoVedic-950 rounded-2xl flex items-center justify-center text-saffron-400 text-3xl shadow-lg mb-4">
-          <i class="fa-solid fa-dharmachakra"></i>
+  <!-- GLOBAL THREE-PORTAL ARCHITECTURE & PWA BAR -->
+  <header class="sticky top-0 z-40 bg-midnight/95 backdrop-blur-md text-white border-b kasavu-border shadow-xl">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      <!-- Brand + Active Domain -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-saffron to-amber-700 p-0.5 shadow-lg shadow-amber-500/20 flex-shrink-0">
+          <div class="w-full h-full bg-midnight rounded-[10px] flex items-center justify-center">
+            <svg class="w-6 h-6 text-amber-400" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 2c-1.5 2.8-3 4.8-3 7.2 0 1.8 1.3 3.3 3 3.3s3-1.5 3-3.3c0-2.4-1.5-4.4-3-7.2zm-5 12h10l-1 2H8l-1-2zm3.5 2h3v3.5h-3V16zM6 19.5h12l-1 2H7l-1-2z"/>
+            </svg>
+          </div>
         </div>
-        <h1 class="font-serif text-3xl font-bold text-indigoVedic-950">BookMy Astrologer</h1>
-        <p class="text-xs text-slate-500 mt-1">Secure Gateway &bull; Consult Verified Experts</p>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-display text-base sm:text-lg font-bold tracking-wide text-amber-300 leading-none">
+              BookMy Astrologer <span class="text-xs font-sans font-semibold text-saffron">KERALA</span>
+            </h1>
+          </div>
+          <div class="flex items-center gap-1.5 mt-1 text-[11px] text-slate-400 font-mono">
+            <i class="fa-solid fa-lock text-emerald-400 text-[10px]"></i>
+            <span id="active-domain-label">https://bookmyastrologer.kerala</span>
+          </div>
+        </div>
       </div>
 
-      <div class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Phone or Email</label>
-          <input type="text" id="login-email" value="customer@example.com" class="w-full p-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-saffron-500 outline-none" />
-        </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
-          <input type="password" id="login-pass" value="password123" class="w-full p-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-saffron-500 outline-none" />
-        </div>
-        <button onclick="handleLogin()" class="w-full py-3 rounded-xl bg-indigoVedic-900 hover:bg-indigoVedic-800 text-saffron-300 font-bold text-sm transition">
-          Login to Customer App
+      <!-- Portal Switcher -->
+      <nav aria-label="Portal Switcher" class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/80">
+        <button type="button" data-action="switch-portal" data-portal="customer" id="portal-btn-customer"
+          class="portal-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-saffron text-slate-950 shadow">
+          <i class="fa-solid fa-user"></i>
+          <span>Customer</span>
         </button>
-        <p class="text-center text-xs text-slate-500">New here? <a href="#" onclick="showToast('Sign up will be connected to Firebase on Day 21!')" class="text-saffron-600 font-bold">Create Account</a></p>
+        <button type="button" data-action="switch-portal" data-portal="astrologer" id="portal-btn-astrologer"
+          class="portal-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white">
+          <i class="fa-solid fa-om"></i>
+          <span>Astrologer</span>
+        </button>
+        <button type="button" data-action="switch-portal" data-portal="admin" id="portal-btn-admin"
+          class="portal-tab px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 text-slate-300 hover:text-white">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Admin</span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Install App, Share, Language, Wallet, Auth -->
+      <div class="flex items-center gap-2">
+        <!-- Install PWA Button (hidden until beforeinstallprompt fires or iOS guide) -->
+        <button type="button" id="pwa-install-btn" data-action="install-pwa"
+          class="hidden items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-saffron text-slate-950 font-bold text-xs shadow hover:brightness-105 transition">
+          <i class="fa-solid fa-download"></i>
+          <span>Install App</span>
+        </button>
+
+        <!-- Share App Button -->
+        <button type="button" data-action="share-app" title="Share App"
+          class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-200 border border-slate-700 text-xs font-semibold transition">
+          <i class="fa-solid fa-share-nodes"></i>
+          <span class="hidden sm:inline">Share</span>
+        </button>
+
+        <!-- Bilingual Toggle -->
+        <button type="button" data-action="toggle-lang" id="lang-toggle-btn"
+          class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-xs font-bold transition">
+          EN | മലയാളം
+        </button>
+
+        <!-- Wallet Pill -->
+        <button type="button" data-action="open-wallet-view" id="header-wallet-pill"
+          class="px-3 py-1.5 rounded-lg bg-emerald-950/90 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition">
+          <i class="fa-solid fa-wallet text-emerald-400"></i>
+          <span id="header-wallet-amount">₹500</span>
+          <span class="text-[10px] bg-emerald-500/20 px-1.5 py-0.5 rounded text-emerald-200">+</span>
+        </button>
+
+        <!-- Session / Auth Status -->
+        <button type="button" data-action="open-auth-modal" id="header-auth-btn"
+          class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-1.5">
+          <i class="fa-solid fa-user-shield text-amber-400"></i>
+          <span id="header-user-label" class="hidden md:inline">Arjun Nair</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APPLICATION CONTAINER -->
+  <main id="app-root" class="min-h-[calc(100vh-140px)] pb-16">
+    <!-- Rendered dynamically by app.js -->
+  </main>
+
+  <!-- FOOTER WITH DPDP 2023 & RESET DEMO -->
+  <footer class="bg-midnight text-slate-400 border-t kasavu-border py-8 px-4 sm:px-6 text-xs">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <p class="font-display text-amber-300 font-bold text-sm">BookMy Astrologer Kerala • കേരള ജ്യോതിഷ വേദി</p>
+        <p class="mt-1 text-slate-400">Chat-Only Live Consultations &amp; Verified Chamber Appointments across all 14 Districts of Kerala.</p>
+        <p class="mt-1 text-slate-500">Compliant with India Digital Personal Data Protection (DPDP) Act, 2023. Chat PII redaction active.</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" data-action="install-pwa" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold">
+          <i class="fa-solid fa-mobile-screen-button mr-1"></i> Install / Add to Home Screen
+        </button>
+        <button type="button" data-action="share-app" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+          <i class="fa-solid fa-share-nodes mr-1"></i> Share App Link
+        </button>
+        <button type="button" data-action="dpdp-export" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+          DPDP Data Export
+        </button>
+        <button type="button" data-action="reset-demo-state" class="px-3 py-1.5 rounded-lg bg-rose-950/70 hover:bg-rose-900 text-rose-200 border border-rose-700/50">
+          Reset Demo Data
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <!-- DPDP CONSENT BANNER -->
+  <div id="dpdp-banner" class="hidden fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md z-40 bg-slate-900 text-white p-4 rounded-2xl border border-amber-500/40 shadow-2xl">
+    <div class="flex items-start gap-3">
+      <i class="fa-solid fa-scale-balanced text-amber-400 text-lg mt-0.5"></i>
+      <div class="text-xs leading-relaxed">
+        <p class="font-bold text-amber-300 mb-1">DPDP Act 2023 Privacy &amp; Consent Notice</p>
+        <p class="text-slate-300">We process birth chart details (date, time, place) solely to generate your Vedic Kundali and facilitate chat or chamber consultations. Bank details are masked at rest.</p>
+        <div class="mt-3 flex items-center gap-2">
+          <button type="button" data-action="accept-dpdp" class="px-3 py-1.5 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400">
+            I Consent &amp; Continue
+          </button>
+          <button type="button" data-action="open-security-modal" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700">
+            View Policy
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- MAIN CUSTOMER APP (Hidden until logged in)                            -->
-  <!-- ===================================================================== -->
-  <div id="main-app" class="hidden flex-col min-h-screen">
-    
-    <!-- Customer Header & Navigation -->
-    <header class="bg-indigoVedic-900 text-white border-b border-saffron-500/30 shadow-md">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        
-        <div class="flex items-center justify-between">
-          <button onclick="switchCustomerPage('live-astrologers')" class="flex items-center gap-3 text-left cursor-pointer">
-            <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-saffron-400 to-saffron-600 flex items-center justify-center text-indigoVedic-950 shadow">
-              <i class="fa-solid fa-dharmachakra text-xl"></i>
-            </div>
-            <div>
-              <span class="font-serif text-xl sm:text-2xl font-bold tracking-wide text-ivory-50 block leading-none">
-                BookMy <span class="text-saffron-400">Astrologer</span>
-              </span>
-              <span class="text-[11px] text-indigo-200 tracking-wider uppercase">Instant Talk • Online &amp; Chamber</span>
-            </div>
-          </button>
-          
-          <!-- Logout Button -->
-          <button onclick="handleLogout()" class="text-rose-400 hover:text-rose-300 text-sm ml-4" title="Logout">
-            <i class="fa-solid fa-power-off"></i>
-          </button>
-        </div>
-
-        <!-- Customer Navigation -->
-        <nav class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-          <button onclick="switchCustomerPage('live-astrologers')" data-cpage="live-astrologers" class="cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-saffron-500 text-indigoVedic-950 shadow cursor-pointer">
-            <i class="fa-solid fa-sparkles mr-1.5"></i>Live Astrologers
-          </button>
-          <button onclick="switchCustomerPage('book-slot')" data-cpage="book-slot" class="cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-indigo-100 hover:bg-indigoVedic-800 cursor-pointer">
-            <i class="fa-solid fa-calendar-check mr-1.5"></i>Book Slot
-          </button>
-          <button onclick="switchCustomerPage('wallet-checkout')" data-cpage="wallet-checkout" class="cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-indigo-100 hover:bg-indigoVedic-800 cursor-pointer">
-            <i class="fa-solid fa-receipt mr-1.5"></i>Wallet &amp; Checkout
-          </button>
-          <button onclick="switchCustomerPage('my-bookings')" data-cpage="my-bookings" class="cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-indigo-100 hover:bg-indigoVedic-800 cursor-pointer">
-            <i class="fa-solid fa-clock-rotate-left mr-1.5"></i>My Bookings
-          </button>
-        </nav>
-      </div>
-    </header>
-
-    <!-- CUSTOMER SUB-PAGE A: LIVE ASTROLOGERS (HOME) -->
-    <section id="cpage-live-astrologers" class="cust-page flex-grow">
-      <!-- Hero Section -->
-      <div class="bg-gradient-to-br from-indigoVedic-950 via-indigoVedic-900 to-indigoVedic-800 text-white border-b border-saffron-500/30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            <div class="lg:col-span-7 space-y-4">
-              <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-saffron-500/20 border border-saffron-400/40 text-saffron-300 text-xs font-bold">
-                <i class="fa-solid fa-gift"></i>
-                <span>FIRST CONSULTATION OFFER: Flat 50% OFF on Live Chat / Call</span>
-              </div>
-              <h1 class="font-serif text-3xl sm:text-5xl font-bold leading-tight text-ivory-50">
-                Talk to Verified <span class="text-saffron-400">Jyotish Acharyas</span> Live
-              </h1>
-              <p class="text-indigo-100/90 text-sm sm:text-base max-w-2xl">
-                Connect instantaneously via per-minute metered Chat/Audio/Video or reserve a fixed 30-minute Online Video or In-Person Chamber slot.
-              </p>
-
-              <!-- Search Bar -->
-              <div class="pt-2 flex flex-col sm:flex-row gap-3 max-w-xl">
-                <div class="relative flex-grow">
-                  <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                  <input id="cust-search-input" type="text" oninput="renderCustomerAstrologers()" placeholder="Search Acharya, language (Hindi, Tamil) or city..." class="w-full pl-11 pr-4 py-3 rounded-xl bg-ivory-50 text-slate-900 placeholder-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-saffron-400" />
-                </div>
-              </div>
-            </div>
-
-            <!-- Wallet Card -->
-            <div class="lg:col-span-5">
-              <div class="bg-ivory-50 text-slate-800 rounded-2xl p-6 shadow-2xl border-2 border-saffron-500/50">
-                <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-4">
-                  <div>
-                    <span class="text-[11px] font-bold uppercase tracking-wider text-saffron-700">Prepaid Wallet</span>
-                    <h2 class="font-serif text-2xl font-bold text-indigoVedic-950">Balance</h2>
-                  </div>
-                  <div class="text-right">
-                    <span id="hero-wallet-display" class="font-serif text-3xl font-extrabold text-indigoVedic-900">₹500</span>
-                  </div>
-                </div>
-                <div class="grid grid-cols-3 gap-2 mb-4">
-                  <button onclick="quickRecharge(250, 0)" class="p-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-center cursor-pointer">
-                    <span class="font-bold text-sm text-indigoVedic-950 block">₹250</span>
-                  </button>
-                  <button onclick="quickRecharge(500, 50)" class="p-2.5 rounded-xl bg-saffron-500/20 border-2 border-saffron-500 text-center relative cursor-pointer">
-                    <span class="font-bold text-sm text-indigoVedic-950 block">₹500</span>
-                    <span class="text-[10px] font-bold text-emerald-700">+₹50 Extra</span>
-                  </button>
-                  <button onclick="quickRecharge(1000, 150)" class="p-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 border border-amber-300 text-center cursor-pointer">
-                    <span class="font-bold text-sm text-indigoVedic-950 block">₹1,000</span>
-                    <span class="text-[10px] font-bold text-emerald-700">+₹150 Extra</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Astrologers Directory -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div class="flex flex-wrap items-center gap-2 mb-8">
-          <button onclick="setCustomerFilter('All')" data-cfilter="All" class="cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-indigoVedic-900 text-white shadow cursor-pointer">All</button>
-          <button onclick="setCustomerFilter('Vedic')" data-cfilter="Vedic" class="cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-amber-200 hover:border-saffron-500 cursor-pointer">Vedic</button>
-          <button onclick="setCustomerFilter('Numerology')" data-cfilter="Numerology" class="cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-amber-200 hover:border-saffron-500 cursor-pointer">Numerology</button>
-          <button onclick="setCustomerFilter('Vastu')" data-cfilter="Vastu" class="cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-amber-200 hover:border-saffron-500 cursor-pointer">Vastu</button>
-        </div>
-
-        <div id="customer-astrologers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-    </section>
-
-    <!-- CUSTOMER SUB-PAGE B: BOOK SLOT (Placeholder for Day 9) -->
-    <section id="cpage-book-slot" class="cust-page hidden flex-grow">
-      <div class="max-w-7xl mx-auto p-10 text-center">
-        <h2 class="font-serif text-3xl font-bold text-indigoVedic-950">Book a Consultation Slot</h2>
-        <p class="text-slate-500 mt-2">Slot booking calendar will be activated on Day 9!</p>
-      </div>
-    </section>
-
-    <!-- CUSTOMER SUB-PAGE C: WALLET CHECKOUT (Placeholder for Day 10) -->
-    <section id="cpage-wallet-checkout" class="cust-page hidden flex-grow">
-      <div class="max-w-7xl mx-auto p-10 text-center">
-        <h2 class="font-serif text-3xl font-bold text-indigoVedic-950">Wallet & Checkout</h2>
-        <p class="text-slate-500 mt-2">Full payment gateway integration will happen on Day 15.</p>
-      </div>
-    </section>
-
-    <!-- CUSTOMER SUB-PAGE D: MY BOOKINGS (Placeholder for Day 11) -->
-    <section id="cpage-my-bookings" class="cust-page hidden flex-grow">
-      <div class="max-w-7xl mx-auto p-10 text-center">
-        <h2 class="font-serif text-3xl font-bold text-indigoVedic-950">My Bookings</h2>
-        <p class="text-slate-500 mt-2">Your consultation history will appear here.</p>
-      </div>
-    </section>
-
+  <!-- MODAL ROOT -->
+  <div id="modal-root" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto" role="dialog" aria-modal="true">
+    <div id="modal-card" class="bg-white text-slate-900 rounded-2xl max-w-2xl w-full shadow-2xl border border-amber-500/30 overflow-hidden my-8">
+      <!-- Modal content injected by app.js -->
+    </div>
   </div>
 
-  <!-- ===================================================================== -->
-  <!-- JAVASCRIPT LOGIC                                                      -->
-  <!-- ===================================================================== -->
-  <script>
-    // Global State for Customer App
-    const state = {
-      customerPage: 'live-astrologers',
-      customerFilter: 'All',
-      walletBalance: 500,
-      astrologers: [
-        { 
-          id: 1, 
-          name: 'Pandit Raghavendra Sharma', 
-          title: 'Jyotish Ratna • Kashi Vidwat Parishad',
-          specialization: 'Vedic', 
-          city: 'Bengaluru', 
-          rating: 4.96, 
-          perMinRate: 25, 
-          photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=240&q=80' 
-        },
-        { 
-          id: 2, 
-          name: 'Acharya Meenakshi Nair', 
-          title: 'Prashna Kundali & Nadi Specialist',
-          specialization: 'Numerology', 
-          city: 'Chennai', 
-          rating: 4.92, 
-          perMinRate: 30, 
-          photo: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=240&q=80' 
-        },
-        { 
-          id: 3, 
-          name: 'Dr. Vikramaditya Joshi', 
-          title: 'M.Arch & Traditional Sthapatya Vastu',
-          specialization: 'Vastu', 
-          city: 'Pune', 
-          rating: 4.94, 
-          perMinRate: 35, 
-          photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=240&q=80' 
-        }
-      ]
-    };
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" aria-live="polite" class="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
 
-    // 1. AUTHENTICATION
-    function handleLogin() {
-      // In a real app, this verifies email/pass against database
-      const email = document.getElementById('login-email').value;
-      if (!email) { showToast('Please enter email', 'error'); return; }
-      
-      document.getElementById('auth-gateway').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('hidden');
-      document.getElementById('main-app').classList.add('flex');
-      
-      renderCustomerAstrologers();
-      updateWalletDisplays();
-      showToast('Logged in successfully. Welcome!');
-    }
-
-    function handleLogout() {
-      document.getElementById('auth-gateway').classList.remove('hidden');
-      document.getElementById('main-app').classList.add('hidden');
-      document.getElementById('main-app').classList.remove('flex');
-      showToast('Logged out securely.');
-    }
-
-    // 2. NAVIGATION
-    function switchCustomerPage(pageName) {
-      state.customerPage = pageName;
-      
-      // Hide all pages
-      document.querySelectorAll('.cust-page').forEach(p => p.classList.add('hidden'));
-      
-      // Show target page
-      document.getElementById(`cpage-${pageName}`).classList.remove('hidden');
-      
-      // Update nav buttons active state
-      document.querySelectorAll('.cust-nav-btn').forEach(btn => {
-        const active = btn.getAttribute('data-cpage') === pageName;
-        btn.className = active
-          ? 'cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap bg-saffron-500 text-indigoVedic-950 shadow cursor-pointer'
-          : 'cust-nav-btn px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-indigo-100 hover:bg-indigoVedic-800 cursor-pointer';
-      });
-      
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // 3. WALLET LOGIC
-    function updateWalletDisplays() {
-      const formatted = `₹${state.walletBalance.toLocaleString('en-IN')}`;
-      const display = document.getElementById('hero-wallet-display');
-      if (display) display.textContent = formatted;
-    }
-
-    function quickRecharge(amount, bonus) {
-      const totalAdded = amount + bonus;
-      state.walletBalance += totalAdded;
-      updateWalletDisplays();
-      showToast(`₹${totalAdded} added to your Wallet (₹${amount} + ₹${bonus} bonus)!`);
-    }
-
-    // 4. ASTROLOGER DIRECTORY RENDER
-    function setCustomerFilter(filter) {
-      state.customerFilter = filter;
-      document.querySelectorAll('.cfilter-btn').forEach(btn => {
-        const active = btn.getAttribute('data-cfilter') === filter;
-        if (active) {
-          btn.className = 'cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-indigoVedic-900 text-white shadow cursor-pointer';
-        } else {
-          btn.className = 'cfilter-btn px-4 py-2 rounded-xl text-xs font-bold bg-white text-slate-700 border border-amber-200 hover:border-saffron-500 cursor-pointer';
-        }
-      });
-      renderCustomerAstrologers();
-    }
-
-    function renderCustomerAstrologers() {
-      const grid = document.getElementById('customer-astrologers-grid');
-      if (!grid) return;
-
-      const query = (document.getElementById('cust-search-input')?.value || '').trim().toLowerCase();
-      
-      const filtered = state.astrologers.filter(astro => {
-        const matchesFilter = state.customerFilter === 'All' || astro.specialization === state.customerFilter;
-        const matchesQuery = !query || astro.name.toLowerCase().includes(query) || astro.city.toLowerCase().includes(query) || astro.specialization.toLowerCase().includes(query);
-        return matchesFilter && matchesQuery;
-      });
-
-      if (filtered.length === 0) {
-        grid.innerHTML = `<div class="col-span-full text-center py-10 bg-white rounded-2xl border border-amber-200"><p class="text-slate-500 font-bold">No astrologers match your search.</p></div>`;
-        return;
-      }
-
-      grid.innerHTML = filtered.map(astro => `
-        <article class="bg-white rounded-2xl border border-amber-200 hover:border-saffron-500 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between overflow-hidden">
-          <div class="p-5">
-            <!-- Status & Verified -->
-            <div class="flex items-center justify-between gap-2 mb-3">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-[11px] font-bold">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online
-              </span>
-              <span class="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                <i class="fa-solid fa-circle-check mr-0.5"></i> Verified
-              </span>
-            </div>
-
-            <!-- Profile Details -->
-            <div class="flex items-start gap-3.5">
-              <img src="${astro.photo}" onerror="this.src='https://placehold.co/100x100/1E1B4B/FBBF24?text=A'" alt="${astro.name}" class="w-16 h-16 rounded-2xl object-cover border-2 border-saffron-400 shrink-0" />
-              <div>
-                <h3 class="font-serif text-lg font-bold text-indigoVedic-950 leading-snug">${astro.name}</h3>
-                <p class="text-xs text-saffron-700 font-bold mt-0.5">${astro.specialization} • ${astro.city}</p>
-                <div class="flex items-center gap-2 mt-1.5 text-xs">
-                  <span class="font-bold text-amber-600">${astro.rating} ★</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Pricing -->
-            <div class="mt-4 pt-3 border-t border-amber-100 bg-ivory-50 p-2.5 rounded-xl border border-amber-200/70 flex justify-between items-center">
-              <span class="text-[11px] text-slate-500 font-semibold">Chat / Call Rate</span>
-              <span class="font-bold text-sm text-indigoVedic-950">₹${astro.perMinRate}/min</span>
-            </div>
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="px-5 py-3.5 bg-ivory-100/60 border-t border-amber-200 grid grid-cols-2 gap-2.5">
-            <button onclick="showToast('Connecting to ${astro.name} live chat...')" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer shadow">
-              <i class="fa-solid fa-comments mr-1"></i> Chat / Call
-            </button>
-            <button onclick="showToast('Opening slot booking calendar for ${astro.name}...')" class="py-2.5 px-3 rounded-xl bg-indigoVedic-900 hover:bg-indigoVedic-800 text-saffron-300 text-xs font-bold transition cursor-pointer">
-              <i class="fa-solid fa-calendar-plus mr-1"></i> Book Slot
-            </button>
-          </div>
-        </article>
-      `).join('');
-    }
-
-    // 5. TOAST NOTIFICATIONS
-    function showToast(msg, type = 'success') {
-      const container = document.getElementById('toast-container');
-      const el = document.createElement('div');
-      const styles = type === 'success'
-        ? 'bg-slate-900 border-saffron-400 text-white'
-        : 'bg-rose-900 border-rose-400 text-white';
-      const icon = type === 'success' ? 'fa-circle-check text-saffron-400' : 'fa-triangle-exclamation text-rose-300';
-      
-      el.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-2xl text-xs sm:text-sm font-medium transition-all ${styles}`;
-      el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
-      
-      container.appendChild(el);
-      
-      setTimeout(() => {
-        el.style.opacity = '0';
-        setTimeout(() => el.remove(), 300);
-      }, 3400);
-    }
-  </script>
+  <!-- Application Script -->
+  <script src="./app.js"></script>
 </body>
 </html>
