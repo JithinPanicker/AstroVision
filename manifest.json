@@ -1,16 +1,25 @@
 {
-  "name": "BookMy Astrologer",
-  "short_name": "BookMyAstro",
-  "description": "Sacred Wisdom, Modern Consultations.",
-  "start_url": "./",
+  "name": "BookMy Astrologer Kerala — ജ്യോതിഷ കൺസൾട്ടേഷൻ",
+  "short_name": "BookMy Astrologer",
+  "description": "Bilingual Malayalam & English Live Chat & Chamber Booking Platform for Verified Kerala Astrologers.",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0D102B",
-  "theme_color": "#0D102B",
+  "orientation": "portrait-primary",
+  "background_color": "#090D1A",
+  "theme_color": "#0F172A",
+  "lang": "en-IN",
+  "categories": ["lifestyle", "social"],
   "icons": [
     {
-      "src": "./icon.svg",
-      "sizes": "any",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230F172A'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%23EAB308' stroke-width='14' stroke-dasharray='18 10'/%3E%3Cpath d='M256 110c-22 44-48 76-48 112 0 28 21 50 48 50s48-22 48-50c0-36-26-68-48-112z' fill='%23F97316'/%3E%3Cpath d='M168 300h176l-18 32H186zM238 332h36v52h-36zM156 384h200l-16 26H172z' fill='%23EAB308'/%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230F172A'/%3E%3Ccircle cx='256' cy='256' r='200' fill='none' stroke='%23EAB308' stroke-width='14' stroke-dasharray='18 10'/%3E%3Cpath d='M256 110c-22 44-48 76-48 112 0 28 21 50 48 50s48-22 48-50c0-36-26-68-48-112z' fill='%23F97316'/%3E%3Cpath d='M168 300h176l-18 32H186zM238 332h36v52h-36zM156 384h200l-16 26H172z' fill='%23EAB308'/%3E%3C/svg%3E",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
